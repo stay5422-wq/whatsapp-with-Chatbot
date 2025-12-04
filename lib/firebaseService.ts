@@ -12,11 +12,15 @@ import {
   setDoc,
   getDoc,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, isFirebaseConfigured } from './firebase';
 import { User, Conversation, Message, QuickReply } from '@/types';
 
 // ========== Users ==========
 export const getUsers = async (): Promise<User[]> => {
+  if (!isFirebaseConfigured || !db) {
+    console.warn('Firebase is not configured');
+    return [];
+  }
   try {
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
@@ -31,6 +35,7 @@ export const getUsers = async (): Promise<User[]> => {
 };
 
 export const addUser = async (user: Omit<User, 'id'>): Promise<string> => {
+  if (!isFirebaseConfigured || !db) throw new Error('Firebase not configured');
   try {
     const docRef = await addDoc(collection(db, 'users'), {
       ...user,
@@ -44,6 +49,7 @@ export const addUser = async (user: Omit<User, 'id'>): Promise<string> => {
 };
 
 export const updateUser = async (userId: string, data: Partial<User>): Promise<void> => {
+  if (!isFirebaseConfigured || !db) throw new Error('Firebase not configured');
   try {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
@@ -57,6 +63,7 @@ export const updateUser = async (userId: string, data: Partial<User>): Promise<v
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {
+  if (!isFirebaseConfigured || !db) throw new Error('Firebase not configured');
   try {
     await deleteDoc(doc(db, 'users', userId));
   } catch (error) {
@@ -67,6 +74,7 @@ export const deleteUser = async (userId: string): Promise<void> => {
 
 // ========== Conversations ==========
 export const getConversations = async (): Promise<Conversation[]> => {
+  if (!isFirebaseConfigured || !db) return [];
   try {
     const conversationsRef = collection(db, 'conversations');
     const q = query(conversationsRef, orderBy('lastMessageTime', 'desc'));
