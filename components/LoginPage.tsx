@@ -140,16 +140,11 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           </button>
         </form>
 
-        {/* Demo Accounts */}
-        <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-          <p className="text-xs text-gray-400 mb-2 text-center">حسابات تجريبية:</p>
-          <div className="text-xs text-gray-500 space-y-1">
-            <div>🔹 <strong>admin</strong> / admin123 (مدير)</div>
-            <div>🔹 <strong>units_agent</strong> / 123456 (وحدات)</div>
-            <div>🔹 <strong>cars_agent</strong> / 123456 (سيارات)</div>
-            <div>🔹 <strong>tourism_agent</strong> / 123456 (باقات)</div>
-            <div>🔹 <strong>complaints_agent</strong> / 123456 (شكاوى)</div>
-          </div>
+        {/* Info */}
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-500">
+            جميع البيانات محمية ومشفرة 🔒
+          </p>
         </div>
       </motion.div>
     </div>
