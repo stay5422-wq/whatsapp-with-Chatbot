@@ -16,10 +16,20 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Clean phone number (remove +, spaces, dashes)
+    const cleanPhone = to.replace(/[\s\-\+\(\)]/g, '');
+    
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return NextResponse.json(
+        { error: 'Invalid phone number format' },
+        { status: 400 }
+      );
+    }
+    
     let messageData: any = {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
-      to: to,
+      to: cleanPhone,
     };
     
     // Handle different message types
@@ -88,9 +98,17 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('WhatsApp API error:', data);
+      console.error('WhatsApp API error:', {
+        status: response.status,
+        error: data,
+        to: cleanPhone,
+        messageData
+      });
       return NextResponse.json(
-        { error: data.error?.message || 'Failed to send message' },
+        { 
+          error: data.error?.message || 'Failed to send message',
+          details: data.error 
+        },
         { status: response.status }
       );
     }
