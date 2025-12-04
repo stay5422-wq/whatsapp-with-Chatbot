@@ -24,6 +24,7 @@ interface ChatAreaProps {
   currentUser: User;
   onAssignConversation: (conversationId: string, userId: string) => void;
   onUpdateConversation: (conversationId: string, updates: Partial<Conversation>) => void;
+  botEnabled: boolean;
 }
 
 const ChatArea = ({
@@ -39,10 +40,10 @@ const ChatArea = ({
   currentUser,
   onAssignConversation,
   onUpdateConversation,
+  botEnabled,
 }: ChatAreaProps) => {
   const [messageText, setMessageText] = useState('');
   const [showQuickReplies, setShowQuickReplies] = useState(false);
-  const [botEnabled, setBotEnabled] = useState(true); // Enabled by default
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -225,7 +226,7 @@ const ChatArea = ({
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
-                {conversation.contactName.charAt(0)}
+                {(conversation.name || conversation.contactName || conversation.phone).charAt(0)}
               </div>
               {conversation.isOnline && (
                 <div className="absolute bottom-0 left-0 w-3 h-3 bg-green-500 rounded-full border-2 border-dark-100"></div>
@@ -260,7 +261,7 @@ const ChatArea = ({
               <Monitor className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setBotEnabled(!botEnabled)}
+              onClick={() => toast.info('يتم التحكم في البوت من الإعدادات')}
               className={`p-3 rounded-lg transition-all ${
                 botEnabled
                   ? 'bg-blue-500/20 text-blue-400'

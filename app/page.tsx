@@ -7,9 +7,10 @@ import { AnimatePresence } from 'framer-motion';
 import ConversationsSidebar from '@/components/ConversationsSidebar';
 import ChatArea from '@/components/ChatArea';
 import LoginPage from '@/components/LoginPage';
+import SettingsModal from '@/components/SettingsModal';
 import { Conversation, Message, QuickReply, FilterType, User } from '@/types';
 import { mockUsers } from '@/lib/mockData';
-import { LogOut, Plus } from 'lucide-react';
+import { LogOut, Plus, Settings } from 'lucide-react';
 
 // Lazy load components for better performance
 const AnimatedStars = dynamic(() => import('@/components/AnimatedStars'), {
@@ -31,6 +32,9 @@ export default function Home() {
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [botEnabled, setBotEnabled] = useState(true);
 
   // Filter conversations based on user department
   const filteredConversations = useMemo(() => {
@@ -92,6 +96,21 @@ export default function Home() {
     toast.success('تم إنشاء المحادثة بنجاح');
   }, [newPhoneNumber, currentUser]);
 
+  // User Management Functions
+  const handleAddUser = useCallback((user: User) => {
+    setUsers((prev) => [...prev, user]);
+  }, []);
+
+  const handleEditUser = useCallback((id: string, updates: Partial<User>) => {
+    setUsers((prev) =>
+      prev.map((user) => (user.id === id ? { ...user, ...updates } : user))
+    );
+  }, []);
+
+  const handleDeleteUser = useCallback((id: string) => {
+    setUsers((prev) => prev.filter((user) => user.id !== id));
+  }, []);
+
   // Handle logout
   const handleLogout = useCallback(() => {
     setCurrentUser(null);
@@ -105,17 +124,17 @@ export default function Home() {
       prev.map((conv) => {
         if (conv.id === conversationId) {
           // Find user to get their name
-          const user = mockConversations.find(() => true); // Placeholder, should get from users list
+          const user = users.find((u) => u.id === userId);
           return { 
             ...conv, 
             assignedTo: userId,
-            assignedToName: `موظف ${userId.slice(-2)}`
+            assignedToName: user?.name || `موظف ${userId.slice(-2)}`
           };
         }
         return conv;
       })
     );
-  }, []);
+  }, [users]);
 
   // Update conversation (for screen sharing, etc.)
   const handleUpdateConversation = useCallback((conversationId: string, updates: Partial<Conversation>) => {
@@ -289,13 +308,24 @@ export default function Home() {
                 {currentUser.role === 'admin' ? 'مدير النظام' : `قسم ${getDepartmentName(currentUser.department)}`}
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors group"
-              title="تسجيل الخروج"
-            >
-              <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-400" />
-            </button>
+            <div className="flex gap-2">
+              {currentUser.role === 'admin' && (
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors group"
+                  title="الإعدادات"
+                >
+                  <Settings className="w-5 h-5 text-gray-400 group-hover:text-blue-400" />
+                </button>
+              )}
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors group"
+                title="تسجيل الخروج"
+              >
+                <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-400" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -320,10 +350,11 @@ export default function Home() {
           onAddQuickReply={handleAddQuickReply}
           onEditQuickReply={handleEditQuickReply}
           onDeleteQuickReply={handleDeleteQuickReply}
-          users={mockUsers.filter(u => u.isActive)}
+          users={users.filter(u => u.isActive)}
           currentUser={currentUser!}
           onAssignConversation={handleAssignConversation}
           onUpdateConversation={handleUpdateConversation}
+          botEnabled={botEnabled}
         />
 
         {/* Contact Info Panel */}
@@ -379,6 +410,23 @@ export default function Home() {
             </div>
           )}
         </AnimatePresence>
+
+        {/* Settings Modal */}
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          currentUser={currentUser}
+          users={users}
+          onAddUser={handleAddUser}
+          onEditUser={handleEditUser}
+          onDeleteUser={handleDeleteUser}
+          quickReplies={quickReplies}
+          onAddQuickReply={handleAddQuickReply}
+          onEditQuickReply={handleEditQuickReply}
+          onDeleteQuickReply={handleDeleteQuickReply}
+          botEnabled={botEnabled}
+          onToggleBot={setBotEnabled}
+        />
       </div>
     </main>
   );
