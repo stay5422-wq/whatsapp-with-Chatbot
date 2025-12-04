@@ -72,9 +72,14 @@ const ConversationsSidebar = ({
                 AE
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 glow-text">
-              صندوق الوارد الموحد
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 glow-text">
+                صندوق الوارد الموحد
+              </h1>
+              <p className="text-sm text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 font-semibold mt-1">
+                لواتساب بيزنس 💼
+              </p>
+            </div>
           </div>
           <button className="p-2 hover:bg-blue-500/10 rounded-lg transition-colors">
             <X className="w-5 h-5 text-gray-400" />

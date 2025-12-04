@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'صندوق الوارد الموحد - WhatsApp Inbox',
-  description: 'واجهة صندوق وارد واتساب للأعمال بتصميم مستقبلي',
+  title: 'صندوق الوارد الموحد لواتساب بيزنس - WhatsApp Business Inbox',
+  description: 'نظام إدارة محادثات واتساب بيزنس الاحترافي بتصميم مستقبلي',
 }
 
 export default function RootLayout({

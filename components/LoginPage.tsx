@@ -68,9 +68,12 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           >
             <UserIcon className="w-10 h-10 text-white" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-1">
             صندوق الوارد الموحد
           </h1>
+          <h2 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 mb-2">
+            لواتساب بيزنس 💼
+          </h2>
           <p className="text-gray-400 mb-4">شركة المسار الساخن للسفر والسياحة</p>
           
           {/* WhatsApp Connect Link */}

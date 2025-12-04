@@ -1,4 +1,4 @@
-# WhatsApp Inbox - صندوق الوارد الموحد
+# WhatsApp Business Inbox - صندوق الوارد الموحد لواتساب بيزنس
 
 واجهة صندوق وارد واتساب للأعمال بتصميم مستقبلي احترافي، مبنية باستخدام Next.js 14 و TypeScript و Tailwind CSS.
 
