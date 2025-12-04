@@ -24,7 +24,6 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libxrandr2 \
     xdg-utils \
-    libgobject-2.0-0 \
     libglib2.0-0 \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
