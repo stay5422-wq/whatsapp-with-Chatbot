@@ -5,7 +5,7 @@ export interface Message {
   text: string;
   sender: 'agent' | 'user' | 'bot';
   timestamp: Date;
-  status: 'sent' | 'delivered' | 'read';
+  status: 'sent' | 'delivered' | 'read' | 'failed';
   attachments?: Attachment[];
   type?: 'text' | 'voice' | 'image' | 'file' | 'video';
   duration?: number; // for voice messages
@@ -21,13 +21,16 @@ export interface Attachment {
 
 export interface Conversation {
   id: string;
-  contactName: string;
-  phoneNumber: string;
+  name?: string; // Display name
+  contactName?: string; // Legacy field
+  phone: string; // WhatsApp phone number
+  phoneNumber?: string; // Legacy field
   avatar: string;
   lastMessage: string;
   timestamp: Date;
   unreadCount: number;
-  isOnline: boolean;
+  status?: 'active' | 'archived' | 'blocked';
+  isOnline?: boolean;
   assignedTo?: string;
   assignedToName?: string;
   department?: Department;

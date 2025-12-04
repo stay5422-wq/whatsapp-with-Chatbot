@@ -8,8 +8,8 @@ import ConversationsSidebar from '@/components/ConversationsSidebar';
 import ChatArea from '@/components/ChatArea';
 import LoginPage from '@/components/LoginPage';
 import { Conversation, Message, QuickReply, FilterType, User } from '@/types';
-import { mockConversations, mockMessages, mockQuickReplies, mockUsers } from '@/lib/mockData';
-import { LogOut } from 'lucide-react';
+import { mockUsers } from '@/lib/mockData';
+import { LogOut, Plus } from 'lucide-react';
 
 // Lazy load components for better performance
 const AnimatedStars = dynamic(() => import('@/components/AnimatedStars'), {
@@ -22,13 +22,15 @@ const ContactInfoPanel = dynamic(() => import('@/components/ContactInfoPanel'), 
 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>(mockMessages);
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>(mockQuickReplies);
+  const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [newPhoneNumber, setNewPhoneNumber] = useState('');
 
   // Filter conversations based on user department
   const filteredConversations = useMemo(() => {
@@ -55,6 +57,40 @@ export default function Home() {
     setCurrentUser(user);
     toast.success(`مرحباً ${user.name}!`);
   }, []);
+
+  // Handle new conversation
+  const handleCreateNewConversation = useCallback(() => {
+    if (!newPhoneNumber.trim()) {
+      toast.error('الرجاء إدخال رقم الهاتف');
+      return;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^[0-9+\s()-]+$/;
+    if (!phoneRegex.test(newPhoneNumber)) {
+      toast.error('رقم الهاتف غير صحيح');
+      return;
+    }
+
+    const newConversation: Conversation = {
+      id: Date.now().toString(),
+      name: newPhoneNumber,
+      phone: newPhoneNumber,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newPhoneNumber)}&background=3b82f6&color=fff`,
+      lastMessage: 'محادثة جديدة',
+      timestamp: new Date(),
+      unreadCount: 0,
+      status: 'active',
+      department: currentUser?.department || 'inquiries',
+    };
+
+    setConversations((prev) => [newConversation, ...prev]);
+    setMessages((prev) => ({ ...prev, [newConversation.id]: [] }));
+    setSelectedConversation(newConversation);
+    setShowNewChatModal(false);
+    setNewPhoneNumber('');
+    toast.success('تم إنشاء المحادثة بنجاح');
+  }, [newPhoneNumber, currentUser]);
 
   // Handle logout
   const handleLogout = useCallback(() => {
@@ -110,7 +146,7 @@ export default function Home() {
   }, []);
 
   // Handle sending message
-  const handleSendMessage = useCallback((text: string, sender: 'user' | 'agent' | 'bot' = 'user') => {
+  const handleSendMessage = useCallback(async (text: string, sender: 'user' | 'agent' | 'bot' = 'user') => {
     if (!selectedConversation) return;
 
     const newMessage: Message = {
@@ -135,25 +171,44 @@ export default function Home() {
       )
     );
 
-    if (sender === 'user') {
-      toast.success('تم إرسال الرسالة');
+    // Send message via WhatsApp API if it's from agent
+    if (sender === 'agent' || sender === 'user') {
+      try {
+        const response = await fetch('/api/whatsapp/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: selectedConversation.phone,
+            message: text,
+          }),
+        });
+
+        if (response.ok) {
+          toast.success('تم إرسال الرسالة');
+          // Update message status to delivered
+          setMessages((prev) => ({
+            ...prev,
+            [selectedConversation.id]: prev[selectedConversation.id].map((msg) =>
+              msg.id === newMessage.id ? { ...msg, status: 'delivered' } : msg
+            ),
+          }));
+        } else {
+          throw new Error('Failed to send message');
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
+        toast.error('فشل إرسال الرسالة');
+        // Update message status to failed
+        setMessages((prev) => ({
+          ...prev,
+          [selectedConversation.id]: prev[selectedConversation.id].map((msg) =>
+            msg.id === newMessage.id ? { ...msg, status: 'failed' } : msg
+          ),
+        }));
+      }
     }
-
-    // Simulate response after 2 seconds
-    setTimeout(() => {
-      const responseMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'شكراً لرسالتك، سنرد عليك في أقرب وقت ممكن.',
-        sender: 'agent',
-        timestamp: new Date(),
-        status: 'delivered',
-      };
-
-      setMessages((prev) => ({
-        ...prev,
-        [selectedConversation.id]: [...(prev[selectedConversation.id] || []), responseMessage],
-      }));
-    }, 2000);
   }, [selectedConversation]);
 
   // Quick Replies CRUD
@@ -215,20 +270,33 @@ export default function Home() {
       {/* Main Content */}
       <div className="relative flex h-screen" dir="rtl">
         {/* User Info Bar */}
-        <div className="absolute top-4 left-4 z-50 flex items-center gap-3 bg-dark-100/95 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-2 shadow-lg">
-          <div className="text-right">
-            <p className="text-sm font-semibold text-white">{currentUser.name}</p>
-            <p className="text-xs text-gray-400">
-              {currentUser.role === 'admin' ? 'مدير النظام' : `قسم ${getDepartmentName(currentUser.department)}`}
-            </p>
-          </div>
+        <div className="absolute top-4 left-4 z-50 flex items-center gap-3">
+          {/* New Chat Button */}
           <button
-            onClick={handleLogout}
-            className="p-2 hover:bg-red-500/20 rounded-lg transition-colors group"
-            title="تسجيل الخروج"
+            onClick={() => setShowNewChatModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-xl transition-all shadow-lg hover:shadow-blue-500/50"
+            title="محادثة جديدة"
           >
-            <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-400" />
+            <Plus className="w-5 h-5" />
+            <span className="text-sm font-semibold">محادثة جديدة</span>
           </button>
+
+          {/* User Info */}
+          <div className="flex items-center gap-3 bg-dark-100/95 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-2 shadow-lg">
+            <div className="text-right">
+              <p className="text-sm font-semibold text-white">{currentUser.name}</p>
+              <p className="text-xs text-gray-400">
+                {currentUser.role === 'admin' ? 'مدير النظام' : `قسم ${getDepartmentName(currentUser.department)}`}
+              </p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors group"
+              title="تسجيل الخروج"
+            >
+              <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-400" />
+            </button>
+          </div>
         </div>
 
         {/* Conversations Sidebar */}
@@ -265,6 +333,50 @@ export default function Home() {
               conversation={selectedConversation}
               onClose={() => setShowContactInfo(false)}
             />
+          )}
+        </AnimatePresence>
+
+        {/* New Chat Modal */}
+        <AnimatePresence>
+          {showNewChatModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <div className="bg-dark-100 border border-blue-500/20 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+                <h3 className="text-xl font-bold text-white mb-4">محادثة جديدة</h3>
+                <p className="text-gray-400 text-sm mb-4">أدخل رقم الهاتف لبدء محادثة واتساب جديدة</p>
+                
+                <input
+                  type="text"
+                  value={newPhoneNumber}
+                  onChange={(e) => setNewPhoneNumber(e.target.value)}
+                  placeholder="مثال: +201234567890"
+                  className="w-full bg-dark-200 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors mb-4"
+                  dir="ltr"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateNewConversation();
+                    }
+                  }}
+                />
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCreateNewConversation}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3 rounded-xl font-semibold transition-all"
+                  >
+                    إنشاء المحادثة
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowNewChatModal(false);
+                      setNewPhoneNumber('');
+                    }}
+                    className="flex-1 bg-dark-200 hover:bg-dark-300 text-gray-300 py-3 rounded-xl font-semibold transition-all"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </AnimatePresence>
       </div>

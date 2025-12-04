@@ -37,9 +37,12 @@ const ConversationsSidebar = ({
   };
 
   const filteredConversations = conversations.filter((conv) => {
+    const displayName = conv.name || conv.contactName || conv.phone;
+    const phoneNumber = conv.phone || conv.phoneNumber || '';
+    
     const matchesSearch =
-      conv.contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conv.phoneNumber.includes(searchQuery);
+      displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      phoneNumber.includes(searchQuery);
 
     const matchesFilter =
       activeFilter === 'all' ||
@@ -117,7 +120,7 @@ const ConversationsSidebar = ({
                 {/* Avatar */}
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
-                    {conversation.contactName.charAt(0)}
+                    {(conversation.name || conversation.contactName || conversation.phone).charAt(0)}
                   </div>
                   {conversation.isOnline && (
                     <div className="absolute bottom-0 left-0 w-3 h-3 bg-green-500 rounded-full border-2 border-dark-100"></div>
@@ -128,7 +131,7 @@ const ConversationsSidebar = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-white truncate">
-                      {conversation.contactName}
+                      {conversation.name || conversation.contactName || conversation.phone}
                     </h3>
                     <span className="text-xs text-gray-400">
                       {getTimeAgo(conversation.timestamp)}
