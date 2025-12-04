@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Toaster, toast } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
@@ -26,15 +26,69 @@ export default function Home() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('whatsapp_quickReplies');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Error loading quick replies:', e);
+        }
+      }
+    }
+    return [];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [botEnabled, setBotEnabled] = useState(true);
+  const [users, setUsers] = useState<User[]>(() => {
+    // Load users from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const savedUsers = localStorage.getItem('whatsapp_users');
+      if (savedUsers) {
+        try {
+          return JSON.parse(savedUsers);
+        } catch (e) {
+          console.error('Error loading users:', e);
+        }
+      }
+    }
+    return mockUsers;
+  });
+  const [botEnabled, setBotEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('whatsapp_botEnabled');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    }
+    return true;
+  });
+
+  // Save users to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('whatsapp_users', JSON.stringify(users));
+    }
+  }, [users]);
+
+  // Save quick replies to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('whatsapp_quickReplies', JSON.stringify(quickReplies));
+    }
+  }, [quickReplies]);
+
+  // Save bot enabled state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('whatsapp_botEnabled', botEnabled.toString());
+    }
+  }, [botEnabled]);
 
   // Filter conversations based on user department
   const filteredConversations = useMemo(() => {
