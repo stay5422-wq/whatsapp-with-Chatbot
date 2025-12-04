@@ -158,6 +158,34 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             جميع البيانات محمية ومشفرة 🔒
           </p>
         </div>
+
+        {/* Developer Info */}
+        <div className="mt-6 pt-6 border-t border-gray-700/50">
+          <div className="flex items-center justify-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full blur-md opacity-50"></div>
+              <img
+                src="/images/developer.jpg"
+                alt="Eng. Akram Elmasry"
+                className="relative w-12 h-12 rounded-full object-cover border-2 border-blue-500/50"
+                onError={(e) => {
+                  // Fallback to initials if image not found
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden relative w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-lg border-2 border-blue-500/50">
+                AE
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                Eng. Akram Elmasry
+              </p>
+              <p className="text-xs text-gray-500">Software Developer</p>
+            </div>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

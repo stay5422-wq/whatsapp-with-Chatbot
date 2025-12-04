@@ -427,6 +427,37 @@ export default function Home() {
           botEnabled={botEnabled}
           onToggleBot={setBotEnabled}
         />
+
+        {/* Developer Credit - Footer */}
+        <div className="fixed bottom-4 left-4 z-10">
+          <div className="bg-dark-200/80 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-2 shadow-lg">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full blur-sm opacity-50"></div>
+                <img
+                  src="/images/developer.jpg"
+                  alt="Eng. Akram Elmasry"
+                  className="relative w-8 h-8 rounded-full object-cover border border-blue-500/50"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextElementSibling) {
+                      (e.currentTarget.nextElementSibling as HTMLElement).classList.remove('hidden');
+                    }
+                  }}
+                />
+                <div className="hidden relative w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-xs border border-blue-500/50">
+                  AE
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                  Eng. Akram Elmasry
+                </p>
+                <p className="text-[10px] text-gray-500">Developer</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );
