@@ -63,8 +63,19 @@ export default function WhatsAppConnection() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-4">
-            <Smartphone className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-4 p-1">
+            <img 
+              src="/images/logo.jpg" 
+              alt="Logo" 
+              className="w-full h-full rounded-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden w-full h-full rounded-full bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center">
+              <Smartphone className="w-10 h-10 text-white" />
+            </div>
           </div>
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 mb-2">
             ربط واتساب

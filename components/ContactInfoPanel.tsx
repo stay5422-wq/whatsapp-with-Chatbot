@@ -20,9 +20,25 @@ const ContactInfoPanel = ({ conversation, onClose }: ContactInfoPanelProps) => {
       {/* Header */}
       <div className="p-6 border-b border-blue-500/20">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-            معلومات جهة الاتصال
-          </h2>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 p-[2px] shadow-lg shadow-blue-500/30">
+              <img 
+                src="/images/logo.jpg" 
+                alt="Logo" 
+                className="w-full h-full rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden w-full h-full rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-xs">
+                AE
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+              معلومات جهة الاتصال
+            </h2>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-blue-500/10 rounded-lg transition-colors"

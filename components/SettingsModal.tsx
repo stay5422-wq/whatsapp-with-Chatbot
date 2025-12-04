@@ -128,9 +128,25 @@ const SettingsModal = ({
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-blue-500/20">
-            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-              ⚙️ إعدادات النظام
-            </h2>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 p-[2px] shadow-lg shadow-blue-500/30">
+                <img 
+                  src="/images/logo.jpg" 
+                  alt="Logo" 
+                  className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden w-full h-full rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+                  AE
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                ⚙️ إعدادات النظام
+              </h2>
+            </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"

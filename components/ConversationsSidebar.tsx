@@ -57,9 +57,25 @@ const ConversationsSidebar = ({
       {/* Header */}
       <div className="p-6 border-b border-blue-500/20">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 glow-text">
-            صندوق الوارد الموحد
-          </h1>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 p-[2px] shadow-lg shadow-blue-500/30">
+              <img 
+                src="/images/logo.jpg" 
+                alt="Logo" 
+                className="w-full h-full rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden w-full h-full rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+                AE
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 glow-text">
+              صندوق الوارد الموحد
+            </h1>
+          </div>
           <button className="p-2 hover:bg-blue-500/10 rounded-lg transition-colors">
             <X className="w-5 h-5 text-gray-400" />
           </button>

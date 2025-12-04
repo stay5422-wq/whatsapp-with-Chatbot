@@ -47,8 +47,19 @@ const AssignmentModal = ({ isOpen, onClose, users, currentAssignedTo, onAssign }
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Users className="w-6 h-6 text-blue-400" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 p-[2px] shadow-lg shadow-blue-500/30">
+                <img 
+                  src="/images/logo.jpg" 
+                  alt="Logo" 
+                  className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden w-full h-full rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+                  AE
+                </div>
               </div>
               <h2 className="text-xl font-bold text-white">إسناد المحادثة</h2>
             </div>

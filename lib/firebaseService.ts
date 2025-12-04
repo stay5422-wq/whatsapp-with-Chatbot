@@ -20,7 +20,7 @@ export const getUsers = async (): Promise<User[]> => {
   try {
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
-    return snapshot.docs.map((doc) => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     })) as User[];
@@ -71,11 +71,29 @@ export const getConversations = async (): Promise<Conversation[]> => {
     const conversationsRef = collection(db, 'conversations');
     const q = query(conversationsRef, orderBy('lastMessageTime', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      lastMessageTime: doc.data().lastMessageTime?.toDate() || new Date(),
-    })) as Conversation[];
+    return snapshot.docs.map((doc: any) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        phone: data.phone || '',
+        avatar: data.avatar || '',
+        lastMessage: data.lastMessage || '',
+        timestamp: data.lastMessageTime?.toDate() || new Date(),
+        unreadCount: data.unreadCount || 0,
+        name: data.name || data.contactName,
+        status: data.status,
+        isOnline: data.isOnline,
+        assignedTo: data.assignedTo,
+        assignedToName: data.assignedToName,
+        department: data.department,
+        currentQuestionId: data.currentQuestionId,
+        collectedData: data.collectedData,
+        isScreenSharing: data.isScreenSharing,
+        screenShareBy: data.screenShareBy,
+        screenShareWithColleagues: data.screenShareWithColleagues,
+        screenShareMode: data.screenShareMode,
+      } as Conversation;
+    });
   } catch (error) {
     console.error('Error getting conversations:', error);
     return [];
@@ -87,7 +105,7 @@ export const saveConversation = async (conversation: Conversation): Promise<void
     const conversationRef = doc(db, 'conversations', conversation.id);
     await setDoc(conversationRef, {
       ...conversation,
-      lastMessageTime: Timestamp.fromDate(conversation.lastMessageTime),
+      lastMessageTime: Timestamp.fromDate(conversation.timestamp),
       updatedAt: Timestamp.now(),
     }, { merge: true });
   } catch (error) {
@@ -102,7 +120,7 @@ export const getMessages = async (conversationId: string): Promise<Message[]> =>
     const messagesRef = collection(db, 'conversations', conversationId, 'messages');
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       timestamp: doc.data().timestamp?.toDate() || new Date(),
@@ -131,7 +149,7 @@ export const getQuickReplies = async (): Promise<QuickReply[]> => {
   try {
     const repliesRef = collection(db, 'quickReplies');
     const snapshot = await getDocs(repliesRef);
-    return snapshot.docs.map((doc) => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     })) as QuickReply[];

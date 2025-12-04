@@ -206,8 +206,19 @@ const ChatArea = ({
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-            <Info className="w-16 h-16 text-blue-400" />
+          <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 p-1 shadow-2xl shadow-blue-500/50">
+            <img 
+              src="/images/logo.jpg" 
+              alt="Logo" 
+              className="w-full h-full rounded-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden w-full h-full rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-5xl">
+              AE
+            </div>
           </div>
           <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">
             مرحباً بك في صندوق الوارد
