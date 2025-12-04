@@ -165,7 +165,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full blur-md opacity-50"></div>
               <img
-                src="/images/developer.jpg"
+                src="/images/logo.jpg"
                 alt="Eng. Akram Elmasry"
                 className="relative w-12 h-12 rounded-full object-cover border-2 border-blue-500/50"
                 onError={(e) => {

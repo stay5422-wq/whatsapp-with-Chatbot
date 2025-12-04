@@ -435,7 +435,7 @@ export default function Home() {
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full blur-sm opacity-50"></div>
                 <img
-                  src="/images/developer.jpg"
+                  src="/images/logo.jpg"
                   alt="Eng. Akram Elmasry"
                   className="relative w-8 h-8 rounded-full object-cover border border-blue-500/50"
                   onError={(e) => {
