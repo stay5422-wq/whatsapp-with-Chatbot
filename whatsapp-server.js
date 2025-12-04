@@ -118,12 +118,36 @@ app.get('/api/qr', (req, res) => {
 });
 
 // Get Status
-app.get('/api/status', (req, res) => {
+app.get('/status', (req, res) => {
     res.json({ 
-        isReady,
-        isConnected: client.info ? true : false,
-        phoneNumber: client.info?.wid?.user || null
+        connected: isReady,
+        qr: currentQR,
+        phoneNumber: client.info?.wid?.user || null,
+        message: isReady ? 'WhatsApp connected' : 'Waiting for QR scan'
     });
+});
+
+// Restart Connection
+app.post('/restart', async (req, res) => {
+    try {
+        console.log('🔄 Restarting WhatsApp connection...');
+        currentQR = null;
+        isReady = false;
+        
+        await client.destroy();
+        await client.initialize();
+        
+        res.json({ 
+            success: true,
+            message: 'WhatsApp connection restarting...'
+        });
+    } catch (error) {
+        console.error('Error restarting:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message 
+        });
+    }
 });
 
 // Get Conversations

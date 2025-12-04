@@ -1,23 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-// This would connect to your WhatsApp server
-// For now, returning mock data
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // In production, connect to your WhatsApp server at port 8080
-    // const response = await fetch('http://localhost:8080/status');
-    // const data = await response.json();
+    // Connect to WhatsApp server on Railway/Render
+    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL || 'http://localhost:8080';
     
-    // Mock response for development
+    const response = await fetch(`${whatsappServerUrl}/status`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+    
+    if (!response.ok) {
+      return NextResponse.json({
+        connected: false,
+        qr: null,
+        message: 'WhatsApp server not responding',
+      });
+    }
+    
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('WhatsApp status error:', error);
     return NextResponse.json({
       connected: false,
-      qr: null, // Will be populated by WhatsApp server
-      message: 'WhatsApp server not connected. Please run the WhatsApp server.',
+      qr: null,
+      message: 'WhatsApp server not available',
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to check WhatsApp status' },
-      { status: 500 }
-    );
   }
 }

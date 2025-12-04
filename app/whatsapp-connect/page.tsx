@@ -20,22 +20,32 @@ export default function WhatsAppConnection() {
   const checkConnection = async () => {
     try {
       const response = await fetch('/api/whatsapp/status');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.connected) {
         setIsConnected(true);
         setQrCode(null);
         setIsLoading(false);
+        setError(null);
       } else if (data.qr) {
         setQrCode(data.qr);
         setIsConnected(false);
         setIsLoading(false);
+        setError(null);
       } else {
         setIsLoading(false);
+        if (data.message) {
+          setError(data.message);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error checking connection:', err);
-      setError('فشل الاتصال بالسيرفر');
+      setError(err.message || 'فشل الاتصال بالسيرفر');
       setIsLoading(false);
     }
   };
@@ -44,12 +54,18 @@ export default function WhatsAppConnection() {
     setIsLoading(true);
     setError(null);
     try {
-      await fetch('/api/whatsapp/restart', { method: 'POST' });
-      toast.success('جاري إعادة الاتصال...');
-      setTimeout(checkConnection, 3000);
-    } catch (err) {
-      setError('فشلت إعادة الاتصال');
-      toast.error('فشلت إعادة الاتصال');
+      const response = await fetch('/api/whatsapp/restart', { method: 'POST' });
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('جاري إعادة الاتصال...');
+        setTimeout(checkConnection, 3000);
+      } else {
+        throw new Error(data.error || 'فشلت إعادة الاتصال');
+      }
+    } catch (err: any) {
+      setError(err.message || 'فشلت إعادة الاتصال');
+      toast.error(err.message || 'فشلت إعادة الاتصال');
       setIsLoading(false);
     }
   };
