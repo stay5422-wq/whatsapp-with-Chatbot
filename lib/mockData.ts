@@ -4,9 +4,9 @@ import { Conversation, Message, QuickReply, User } from '@/types';
 export const mockUsers: User[] = [
   {
     id: '1',
-    username: 'admin',
-    password: 'admin123',
-    name: 'مدير النظام',
+    username: 'akram',
+    password: 'akram2026',
+    name: 'Eng. Akram Elmasry',
     role: 'admin',
     department: 'all',
     isActive: true,
