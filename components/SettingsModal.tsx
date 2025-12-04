@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Users, Bot, MessageSquare, Plus, Edit2, Trash2, Save } from 'lucide-react';
 import { User, QuickReply, Department } from '@/types';
 import { toast } from 'react-hot-toast';
+import QuestionTreeEditor from './QuestionTreeEditor';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -37,7 +38,7 @@ const SettingsModal = ({
   botEnabled,
   onToggleBot,
 }: SettingsModalProps) => {
-  const [activeTab, setActiveTab] = useState<'users' | 'bot' | 'replies'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'bot' | 'replies' | 'questions'>('users');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
     name: '',
@@ -48,6 +49,7 @@ const SettingsModal = ({
   });
   const [editingReply, setEditingReply] = useState<QuickReply | null>(null);
   const [newReplyText, setNewReplyText] = useState('');
+  const [questionTreeData, setQuestionTreeData] = useState<any>(null);
 
   // Check if user is admin
   if (currentUser.role !== 'admin') {
@@ -162,6 +164,17 @@ const SettingsModal = ({
               <span>البوت الذكي</span>
             </button>
             <button
+              onClick={() => setActiveTab('questions')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                activeTab === 'questions'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
+                  : 'bg-dark-200 text-gray-400 hover:bg-dark-300'
+              }`}
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span>شجرة الأسئلة</span>
+            </button>
+            <button
               onClick={() => setActiveTab('replies')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                 activeTab === 'replies'
@@ -169,7 +182,7 @@ const SettingsModal = ({
                   : 'bg-dark-200 text-gray-400 hover:bg-dark-300'
               }`}
             >
-              <MessageSquare className="w-5 h-5" />
+              <Edit2 className="w-5 h-5" />
               <span>الردود السريعة</span>
             </button>
           </div>
@@ -338,11 +351,7 @@ const SettingsModal = ({
                 </div>
 
                 <div className="bg-dark-200/50 border border-blue-500/20 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">📋 شجرة الأسئلة</h3>
-                  <p className="text-gray-400 text-sm mb-4">
-                    يمكنك تعديل شجرة الأسئلة والأجوبة من ملف{' '}
-                    <code className="bg-dark-300 px-2 py-1 rounded text-cyan-400">lib/questionTree.ts</code>
-                  </p>
+                  <h3 className="text-lg font-semibold text-white mb-3">ℹ️ معلومات البوت</h3>
                   <div className="space-y-2 text-sm text-gray-300">
                     <p>✨ المميزات المتاحة:</p>
                     <ul className="list-disc list-inside space-y-1 mr-4">
@@ -351,9 +360,24 @@ const SettingsModal = ({
                       <li>جمع بيانات العملاء تلقائياً</li>
                       <li>رسائل تأكيد احترافية</li>
                     </ul>
+                    <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                      <p className="text-blue-400 text-sm">
+                        💡 لتعديل الأسئلة والأجوبة، اذهب إلى تبويب "شجرة الأسئلة"
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Questions Tree Tab */}
+            {activeTab === 'questions' && (
+              <QuestionTreeEditor
+                onSave={(tree) => {
+                  // Save to API or localStorage
+                  console.log('Saving tree:', tree);
+                }}
+              />
             )}
 
             {/* Quick Replies Tab */}
