@@ -1,11 +1,14 @@
 # دليل رفع التطبيق والربط مع WhatsApp Business API
 
+> **⚠️ IMPORTANT:** If you're getting Chrome/Puppeteer errors, see **[CHROME_FIX.md](./CHROME_FIX.md)** first!
+
 ## 📋 المحتويات
 1. [إعداد WhatsApp Business API](#whatsapp-api)
 2. [رفع التطبيق على Vercel](#vercel)
 3. [رفع التطبيق على Netlify](#netlify)
 4. [رفع التطبيق على VPS](#vps)
 5. [ربط قاعدة البيانات](#database)
+6. [Fix Chrome Errors](#chrome-fix)
 
 ---
 
@@ -399,12 +402,31 @@ sudo ufw allow 443
 
 ---
 
+## 🔧 Fix Chrome Errors {#chrome-fix}
+
+If you're getting errors like:
+```
+Error: Failed to launch the browser process!
+libgobject-2.0.so.0: cannot open shared object file: No such file or directory
+```
+
+**See detailed fix guide: [CHROME_FIX.md](./CHROME_FIX.md)**
+
+Quick solutions:
+- ✅ Use **Render** with Blueprint (automatic Chrome installation)
+- ✅ Use **Railway** or **Fly.io** with Docker
+- ✅ Use provided `Dockerfile` for any Docker platform
+- ✅ Add Chrome buildpack if using Heroku
+
+---
+
 ## 📞 الدعم
 
 للحصول على مساعدة:
 - [Meta WhatsApp Docs](https://developers.facebook.com/docs/whatsapp)
 - [Next.js Deployment](https://nextjs.org/docs/deployment)
 - [Vercel Support](https://vercel.com/support)
+- [Chrome/Puppeteer Fix](./CHROME_FIX.md)
 
 ---
 

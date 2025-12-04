@@ -6,6 +6,8 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?style=for-the-badge&logo=tailwind-css)
 
+> **🚨 Getting Chrome/Puppeteer errors?** → See **[QUICK_CHROME_FIX.md](./QUICK_CHROME_FIX.md)** for instant solutions!
+
 ## ✨ المميزات
 
 ### 🤖 نظام البوت الذكي (ChatBot)
