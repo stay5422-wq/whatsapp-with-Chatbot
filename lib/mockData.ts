@@ -54,6 +54,7 @@ export const mockConversations: Conversation[] = [
   {
     id: '1',
     contactName: 'م. أكرم المصري',
+    phone: '+966559902557',
     phoneNumber: '+966559902557',
     avatar: 'A',
     lastMessage: 'مرحباً، أنا بحاجة لمساعدة',
@@ -66,6 +67,7 @@ export const mockConversations: Conversation[] = [
   {
     id: '2',
     contactName: 'سارة أحمد',
+    phone: '+966542473378',
     phoneNumber: '+966542473378',
     avatar: 'S',
     lastMessage: 'شكراً على المساعدة',
@@ -78,6 +80,7 @@ export const mockConversations: Conversation[] = [
   {
     id: '3',
     contactName: 'واتساب الأعمال',
+    phone: '+966501234567',
     phoneNumber: '+966501234567',
     avatar: 'W',
     lastMessage: 'هل يمكنك مساعدتي؟',
@@ -90,6 +93,7 @@ export const mockConversations: Conversation[] = [
   {
     id: '4',
     contactName: 'المسار السابق للسفر والسياحة',
+    phone: '+966501234568',
     phoneNumber: '+966501234568',
     avatar: 'M',
     lastMessage: 'أرغب في حجز رحلة',
@@ -101,6 +105,7 @@ export const mockConversations: Conversation[] = [
   {
     id: '5',
     contactName: 'الرزم الموحد',
+    phone: '+966501234569',
     phoneNumber: '+966501234569',
     avatar: 'R',
     lastMessage: 'ما هي الأسعار المتاحة؟',
@@ -113,6 +118,7 @@ export const mockConversations: Conversation[] = [
   {
     id: '6',
     contactName: 'مناقشة آخر الأحداث',
+    phone: '+966501234570',
     phoneNumber: '+966501234570',
     avatar: 'M',
     lastMessage: 'نعم، أوافق على ذلك',
@@ -125,6 +131,7 @@ export const mockConversations: Conversation[] = [
   {
     id: '7',
     contactName: 'تسنيم',
+    phone: '+966501234571',
     phoneNumber: '+966501234571',
     avatar: 'T',
     lastMessage: 'تم الإرسال بنجاح',

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Users, Bot, MessageSquare, Plus, Edit2, Trash2, Save } from 'lucide-react';
-import { User, QuickReply } from '@/types';
+import { User, QuickReply, Department } from '@/types';
 import { toast } from 'react-hot-toast';
 
 interface SettingsModalProps {
@@ -62,11 +62,11 @@ const SettingsModal = ({
 
     const user: User = {
       id: Date.now().toString(),
+      username: newUser.email,
       name: newUser.name,
-      email: newUser.email,
       password: newUser.password,
       role: newUser.role,
-      department: newUser.department,
+      department: newUser.department as Department,
       isActive: true,
     };
 
@@ -80,7 +80,7 @@ const SettingsModal = ({
 
     onEditUser(editingUser.id, {
       name: editingUser.name,
-      email: editingUser.email,
+      username: editingUser.username,
       role: editingUser.role,
       department: editingUser.department,
       isActive: editingUser.isActive,
@@ -250,7 +250,7 @@ const SettingsModal = ({
                           />
                           <select
                             value={editingUser.department}
-                            onChange={(e) => setEditingUser({ ...editingUser, department: e.target.value })}
+                            onChange={(e) => setEditingUser({ ...editingUser, department: e.target.value as Department })}
                             className="bg-dark-300 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
                           >
                             {departments.map((dept) => (

@@ -37,14 +37,14 @@ const ContactInfoPanel = ({ conversation, onClose }: ContactInfoPanelProps) => {
         <div className="flex flex-col items-center">
           <div className="relative mb-4">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-3xl">
-              {conversation.contactName.charAt(0)}
+              {(conversation.name || conversation.contactName || conversation.phone).charAt(0)}
             </div>
             {conversation.isOnline && (
               <div className="absolute bottom-2 left-2 w-4 h-4 bg-green-500 rounded-full border-2 border-dark-100"></div>
             )}
           </div>
           <h3 className="text-xl font-bold text-white mb-1">
-            {conversation.contactName}
+            {conversation.name || conversation.contactName || conversation.phone}
           </h3>
           <p className="text-sm text-gray-400">
             {conversation.isOnline ? 'متصل الآن' : 'غير متصل'}
@@ -61,7 +61,7 @@ const ContactInfoPanel = ({ conversation, onClose }: ContactInfoPanelProps) => {
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">رقم الهاتف</p>
-              <p className="text-white font-medium">{conversation.phoneNumber}</p>
+              <p className="text-white font-medium">{conversation.phone || conversation.phoneNumber}</p>
             </div>
           </div>
 

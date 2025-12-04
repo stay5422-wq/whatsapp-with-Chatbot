@@ -261,7 +261,7 @@ const ChatArea = ({
               <Monitor className="w-5 h-5" />
             </button>
             <button
-              onClick={() => toast.info('يتم التحكم في البوت من الإعدادات')}
+              onClick={() => toast('يتم التحكم في البوت من الإعدادات ⚙️', { icon: 'ℹ️' })}
               className={`p-3 rounded-lg transition-all ${
                 botEnabled
                   ? 'bg-blue-500/20 text-blue-400'
