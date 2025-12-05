@@ -14,23 +14,40 @@ export async function GET() {
       });
     }
     
-    const response = await fetch(`${whatsappServerUrl}/status`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(10000), // 10 second timeout
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    if (!response.ok) {
-      return NextResponse.json({
-        connected: false,
-        qr: null,
-        message: `WhatsApp server responded with status: ${response.status}`,
+    try {
+      const response = await fetch(`${whatsappServerUrl}/status`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        return NextResponse.json({
+          connected: false,
+          qr: null,
+          message: `WhatsApp server responded with status: ${response.status}`,
+        });
+      }
+      
+      const data = await response.json();
+      return NextResponse.json(data);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        return NextResponse.json({
+          connected: false,
+          qr: null,
+          message: 'Request timeout - server may be starting up',
+        });
+      }
+      throw fetchError;
     }
-    
-    const data = await response.json();
-    return NextResponse.json(data);
   } catch (error: any) {
     console.error('WhatsApp status error:', error);
     return NextResponse.json({

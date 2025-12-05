@@ -11,21 +11,33 @@ export async function POST() {
       );
     }
     
-    const response = await fetch(`${whatsappServerUrl}/restart`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(10000),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    if (!response.ok) {
-      throw new Error(`Server responded with status: ${response.status}`);
+    try {
+      const response = await fetch(`${whatsappServerUrl}/restart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return NextResponse.json({
+        success: true,
+        message: data.message || 'Restarting WhatsApp connection...',
+      });
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Request timeout - server took too long to respond');
+      }
+      throw fetchError;
     }
-    
-    const data = await response.json();
-    return NextResponse.json({
-      success: true,
-      message: data.message || 'Restarting WhatsApp connection...',
-    });
   } catch (error: any) {
     console.error('WhatsApp restart error:', error);
     return NextResponse.json(
