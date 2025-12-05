@@ -72,21 +72,33 @@ async function initializeClient() {
         devtools: false,
         useChrome: false,
         debug: false,
-        logQR: true,
+        logQR: false,
+        disableWelcome: true,
+        updatesLog: false,
+        autoClose: 60000,
         browserArgs: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-software-rasterizer'
         ],
         puppeteerOptions: {
             executablePath: '/usr/bin/chromium',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            userDataDir: '/tmp/wpp-session-' + Date.now()
         },
         catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
-            console.log('📱 QR Code received! Scan it now!');
-            currentQR = base64Qr;
+            console.log('📱 QR Code received! Attempt:', attempts);
+            // Extract actual QR code from data URL
+            if (base64Qr && base64Qr.startsWith('data:image')) {
+                currentQR = base64Qr;
+            } else {
+                currentQR = 'data:image/png;base64,' + base64Qr;
+            }
             isConnecting = false;
+            console.log('QR Code URL:', urlCode);
         },
         statusFind: (statusSession, session) => {
             console.log(`📊 Status: ${statusSession}`);
