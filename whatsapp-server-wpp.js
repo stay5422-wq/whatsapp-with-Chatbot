@@ -1,7 +1,6 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const admin = require('firebase-admin');
 
 const app = express();
@@ -57,55 +56,13 @@ async function saveMessagesToFirebase(conversationId, messagesList) {
     }
 }
 
-async function loadConversationsFromFirebase() {
-    if (!db) return;
-    try {
-        const snapshot = await db.collection('conversations').get();
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            conversations.set(doc.id, {
-                ...data,
-                timestamp: data.timestamp.toDate()
-            });
-        });
-        console.log(`📥 Loaded ${conversations.size} conversations from Firebase`);
-    } catch (error) {
-        console.error('Error loading conversations from Firebase:', error.message);
-    }
-}
-
-async function loadMessagesFromFirebase(conversationId) {
-    if (!db) return [];
-    try {
-        const snapshot = await db.collection('messages').doc(conversationId).collection('items').orderBy('timestamp').get();
-        const msgList = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            msgList.push({
-                ...data,
-                timestamp: data.timestamp.toDate()
-            });
-        });
-        return msgList;
-    } catch (error) {
-        console.error('Error loading messages from Firebase:', error.message);
-        return [];
-    }
-}
-
-// Use persistent storage path for Railway Volume
-const SESSION_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH 
-    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, '.wwebjs_auth')
-    : './.wwebjs_auth';
-
-console.log(`📁 Using session path: ${SESSION_PATH}`);
-
-// Initialize WPPConnect Client
+// WPPConnect Client
 let client = null;
 let currentQR = null;
 let isReady = false;
 let isConnecting = false;
 
+// Initialize WPPConnect
 async function initializeClient() {
     console.log('🚀 Initializing WPPConnect...');
     
@@ -120,24 +77,21 @@ async function initializeClient() {
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
             '--disable-gpu'
         ],
         puppeteerOptions: {
             executablePath: '/usr/bin/chromium',
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         },
-        catchQR: (base64Qr, asciiQR) => {
-            console.log('📱 QR Code received!');
+        catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
+            console.log('📱 QR Code received! Scan it now!');
             currentQR = base64Qr;
             isConnecting = false;
         },
         statusFind: (statusSession, session) => {
             console.log(`📊 Status: ${statusSession}`);
             if (statusSession === 'qrReadSuccess') {
-                console.log('🔐 QR Code scanned successfully!');
+                console.log('🔐 QR Code scanned!');
                 isConnecting = true;
             }
             if (statusSession === 'isLogged') {
@@ -145,15 +99,11 @@ async function initializeClient() {
                 isReady = true;
                 isConnecting = false;
                 currentQR = null;
+                loadExistingChats();
             }
         }
     });
 
-    // Load existing chats after ready
-    if (isReady) {
-        await loadExistingChats();
-    }
-    
     // Listen for messages
     client.onMessage(async (message) => {
         await handleIncomingMessage(message);
@@ -164,34 +114,24 @@ async function initializeClient() {
 
 // Load existing chats
 async function loadExistingChats() {
-    console.log('✅ WhatsApp is ready!');
-    isReady = true;
-    isConnecting = false;
-    currentQR = null;
-    
-    // Load existing chats
     try {
         console.log('📥 Loading existing chats...');
-        const chats = await client.getChats();
+        const chats = await client.getAllChats();
         console.log(`📊 Found ${chats.length} chats`);
         
-        for (const chat of chats) {
+        for (const chat of chats.slice(0, 50)) { // Load first 50 chats
             try {
-                // Get last 20 messages from each chat
-                const chatMessages = await chat.fetchMessages({ limit: 20 });
+                const messages = await client.getMessages(chat.id._serialized, { count: 20 });
                 
-                if (chatMessages.length > 0) {
-                    const contact = await chat.getContact();
+                if (messages.length > 0) {
                     const conversationId = chat.id._serialized;
-                    const phoneNumber = contact.number || chat.id.user;
+                    const lastMsg = messages[messages.length - 1];
                     
-                    // Create conversation
-                    const lastMsg = chatMessages[chatMessages.length - 1];
                     conversations.set(conversationId, {
                         id: conversationId,
-                        name: chat.name || contact.pushname || contact.name || phoneNumber,
-                        phone: phoneNumber,
-                        avatar: await contact.getProfilePicUrl().catch(() => null),
+                        name: chat.name || chat.contact?.pushname || chat.id.user,
+                        phone: chat.id.user,
+                        avatar: null,
                         lastMessage: lastMsg.body || 'رسالة وسائط',
                         timestamp: new Date(lastMsg.timestamp * 1000),
                         unreadCount: chat.unreadCount || 0,
@@ -199,17 +139,15 @@ async function loadExistingChats() {
                     });
                     
                     // Store messages
-                    const msgList = [];
-                    for (const msg of chatMessages) {
-                        msgList.push({
-                            id: msg.id._serialized,
-                            text: msg.body || '',
-                            sender: msg.fromMe ? 'agent' : 'user',
-                            timestamp: new Date(msg.timestamp * 1000),
-                            status: msg.ack >= 3 ? 'read' : msg.ack >= 2 ? 'delivered' : 'sent',
-                            type: msg.type
-                        });
-                    }
+                    const msgList = messages.map(msg => ({
+                        id: msg.id,
+                        text: msg.body || '',
+                        sender: msg.fromMe ? 'agent' : 'user',
+                        timestamp: new Date(msg.timestamp * 1000),
+                        status: 'delivered',
+                        type: msg.type
+                    }));
+                    
                     messages.set(conversationId, msgList);
                     
                     // Save to Firebase
@@ -218,60 +156,25 @@ async function loadExistingChats() {
                         await saveMessagesToFirebase(conversationId, msgList);
                     }
                 }
-            } catch (chatError) {
-                console.error('Error loading chat:', chatError.message);
+            } catch (err) {
+                console.error('Error loading chat:', err.message);
             }
         }
         
-        console.log(`✅ Loaded ${conversations.size} conversations with messages`);
-        
-        // Also try to load from Firebase
-        if (db && conversations.size === 0) {
-            console.log('📥 Trying to load from Firebase...');
-            await loadConversationsFromFirebase();
-        }
+        console.log(`✅ Loaded ${conversations.size} conversations`);
     } catch (error) {
         console.error('Error loading chats:', error);
     }
-});
+}
 
-// Authentication
-client.on('authenticated', () => {
-    console.log('🔐 WhatsApp authenticated!');
-    isConnecting = true;
-});
-
-// Authentication failure
-client.on('auth_failure', (msg) => {
-    console.error('❌ Authentication failed:', msg);
-    isReady = false;
-    isConnecting = false;
-});
-
-// Disconnected
-client.on('disconnected', (reason) => {
-    console.log('📴 WhatsApp disconnected:', reason);
-    isReady = false;
-    isConnecting = false;
-    currentQR = null;
-});
-
-// Loading screen
-client.on('loading_screen', (percent, message) => {
-    console.log(`⏳ Loading: ${percent}% - ${message}`);
-});
-
-// Receive Messages
-client.on('message', async (msg) => {
+// Handle incoming messages
+async function handleIncomingMessage(message) {
     try {
-        console.log(`📨 New message received from: ${msg.from}`);
-        const contact = await msg.getContact();
-        const chat = await msg.getChat();
+        console.log(`📨 New message from: ${message.from}`);
         
-        const conversationId = msg.from;
-        const phoneNumber = contact.number || msg.from.replace('@c.us', '');
-        
-        console.log(`👤 Contact: ${contact.pushname || phoneNumber}`);
+        const conversationId = message.from;
+        const contact = await client.getContact(message.from);
+        const phoneNumber = contact.id.user;
         
         // Create or update conversation
         if (!conversations.has(conversationId)) {
@@ -279,16 +182,16 @@ client.on('message', async (msg) => {
                 id: conversationId,
                 name: contact.pushname || contact.name || phoneNumber,
                 phone: phoneNumber,
-                avatar: await contact.getProfilePicUrl() || null,
-                lastMessage: msg.body,
-                timestamp: new Date(msg.timestamp * 1000),
+                avatar: null,
+                lastMessage: message.body || 'رسالة وسائط',
+                timestamp: new Date(message.timestamp * 1000),
                 unreadCount: 1,
                 status: 'active'
             });
         } else {
             const conv = conversations.get(conversationId);
-            conv.lastMessage = msg.body;
-            conv.timestamp = new Date(msg.timestamp * 1000);
+            conv.lastMessage = message.body || 'رسالة وسائط';
+            conv.timestamp = new Date(message.timestamp * 1000);
             conv.unreadCount = (conv.unreadCount || 0) + 1;
         }
         
@@ -298,12 +201,12 @@ client.on('message', async (msg) => {
         }
         
         const newMessage = {
-            id: msg.id._serialized,
-            text: msg.body,
+            id: message.id,
+            text: message.body || '',
             sender: 'user',
-            timestamp: new Date(msg.timestamp * 1000),
+            timestamp: new Date(message.timestamp * 1000),
             status: 'delivered',
-            type: msg.type
+            type: message.type
         };
         
         messages.get(conversationId).push(newMessage);
@@ -314,22 +217,13 @@ client.on('message', async (msg) => {
             await saveMessagesToFirebase(conversationId, [newMessage]);
         }
         
-        console.log(`📨 Message from ${contact.pushname || phoneNumber}: ${msg.body}`);
-        
+        console.log(`✅ Message processed`);
     } catch (error) {
         console.error('Error processing message:', error);
     }
-});
-
-// Initialize client
-client.initialize();
+}
 
 // API Endpoints
-
-// Get QR Code
-app.get('/api/qr', (req, res) => {
-    res.json({ qr: currentQR, isReady });
-});
 
 // Get Status
 app.get('/status', (req, res) => {
@@ -337,7 +231,7 @@ app.get('/status', (req, res) => {
         connected: isReady,
         qr: currentQR,
         connecting: isConnecting,
-        phoneNumber: client.info?.wid?.user || null,
+        phoneNumber: null,
         message: isReady ? 'WhatsApp connected' : 
                  isConnecting ? 'Connecting...' : 
                  currentQR ? 'Waiting for QR scan' : 'Initializing...'
@@ -351,8 +245,13 @@ app.post('/restart', async (req, res) => {
         currentQR = null;
         isReady = false;
         
-        await client.destroy();
-        await client.initialize();
+        if (client) {
+            await client.close();
+        }
+        
+        setTimeout(() => {
+            initializeClient();
+        }, 2000);
         
         res.json({ 
             success: true,
@@ -370,10 +269,6 @@ app.post('/restart', async (req, res) => {
 // Get Conversations
 app.get('/api/conversations', async (req, res) => {
     try {
-        // Load from Firebase if not in memory
-        if (conversations.size === 0 && db) {
-            await loadConversationsFromFirebase();
-        }
         const convArray = Array.from(conversations.values());
         res.json(convArray);
     } catch (error) {
@@ -382,21 +277,12 @@ app.get('/api/conversations', async (req, res) => {
     }
 });
 
-// Get Messages for a conversation
+// Get Messages
 app.get('/api/messages/:conversationId', async (req, res) => {
     try {
         const { conversationId } = req.params;
-        let msgs = messages.get(conversationId);
-        
-        // Load from Firebase if not in memory
-        if (!msgs && db) {
-            msgs = await loadMessagesFromFirebase(conversationId);
-            if (msgs.length > 0) {
-                messages.set(conversationId, msgs);
-            }
-        }
-        
-        res.json(msgs || []);
+        const msgs = messages.get(conversationId) || [];
+        res.json(msgs);
     } catch (error) {
         console.error('Error getting messages:', error);
         res.json([]);
@@ -408,7 +294,7 @@ app.post('/api/send', async (req, res) => {
     try {
         const { to, message } = req.body;
         
-        if (!isReady) {
+        if (!isReady || !client) {
             return res.status(503).json({ error: 'WhatsApp is not ready yet' });
         }
         
@@ -419,7 +305,7 @@ app.post('/api/send', async (req, res) => {
         }
         
         // Send message
-        const msg = await client.sendMessage(phoneNumber, message);
+        const result = await client.sendText(phoneNumber, message);
         
         // Store sent message
         const conversationId = phoneNumber;
@@ -427,14 +313,16 @@ app.post('/api/send', async (req, res) => {
             messages.set(conversationId, []);
         }
         
-        messages.get(conversationId).push({
-            id: msg.id._serialized,
+        const sentMsg = {
+            id: result.id,
             text: message,
             sender: 'agent',
             timestamp: new Date(),
             status: 'sent',
             type: 'chat'
-        });
+        };
+        
+        messages.get(conversationId).push(sentMsg);
         
         // Update conversation
         if (conversations.has(conversationId)) {
@@ -445,7 +333,7 @@ app.post('/api/send', async (req, res) => {
         
         res.json({ 
             success: true, 
-            messageId: msg.id._serialized 
+            messageId: result.id
         });
         
     } catch (error) {
@@ -459,15 +347,14 @@ app.get('/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         isReady,
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
+        uptime: process.uptime()
     });
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({
-        service: 'WhatsApp Business Server',
+        service: 'WhatsApp Business Server (WPPConnect)',
         status: 'running',
         connected: isReady,
         endpoints: {
@@ -481,7 +368,5 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 WhatsApp Server running on port ${PORT}`);
-    console.log(`🌐 Server URL: http://0.0.0.0:${PORT}`);
-    console.log(`📱 Waiting for QR Code scan...`);
-    console.log(`✅ Health check: http://0.0.0.0:${PORT}/health`);
+    initializeClient().catch(console.error);
 });
