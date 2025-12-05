@@ -25,6 +25,97 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 // Store for conversations and messages
 const conversations = new Map();
 const messages = new Map();
+const userSessions = new Map(); // Track user's current question in the tree
+
+// Question Tree
+const questionTree = {
+    "welcome": {
+        "text": "مرحبًا بك في *المسار الساخن للسفر والسياحة* 🔥🌍\n\nيشرفنا نخدمك! اختر الخدمة المطلوبة:\n\n1️⃣ حجز وحدات الضيافة 🏘️\n2️⃣ حجز سيارات 🚗\n3️⃣ البرامج والخدمات السياحية 🗺️\n4️⃣ المرشدين السياحيين 👨‍🏫\n5️⃣ خدمة العملاء 💬",
+        "options": {
+            "1": "hospitality_units",
+            "2": "car_rental",
+            "3": "tours_activities",
+            "4": "tour_guides",
+            "5": "customer_support"
+        }
+    },
+    "hospitality_units": {
+        "text": "اختر نوع وحدة الضيافة:\n\n1️⃣ شاليهات 🏡\n2️⃣ منتجعات 🏘️\n3️⃣ شقق فندقية 🏢\n\n0️⃣ رجوع ⬅️",
+        "options": {
+            "1": "unit_details",
+            "2": "unit_details",
+            "3": "unit_details",
+            "0": "welcome"
+        }
+    },
+    "car_rental": {
+        "text": "اختر نوع حجز السيارة:\n\n1️⃣ سيارة بدون سائق 🚙\n2️⃣ سيارة مع سائق 🚖\n\n0️⃣ رجوع ⬅️",
+        "options": {
+            "1": "car_details",
+            "2": "car_details",
+            "0": "welcome"
+        }
+    },
+    "tours_activities": {
+        "text": "اختر نوع الخدمة السياحية:\n\n1️⃣ جولات سياحية 🗺️\n2️⃣ تذاكر 🎫\n3️⃣ أنشطة ترفيهية 🎪\n\n0️⃣ رجوع ⬅️",
+        "options": {
+            "1": "tour_details",
+            "2": "tour_details",
+            "3": "tour_details",
+            "0": "welcome"
+        }
+    },
+    "tour_guides": {
+        "text": "اختر نوع المرشد السياحي:\n\n1️⃣ مرشد باللغة العربية 🇸🇦\n2️⃣ مرشد باللغة الإنجليزية 🇬🇧\n3️⃣ مرشد بلغات أخرى 🌐\n\n0️⃣ رجوع ⬅️",
+        "options": {
+            "1": "guide_details",
+            "2": "guide_details",
+            "3": "guide_details",
+            "0": "welcome"
+        }
+    },
+    "customer_support": {
+        "text": "مرحبًا بك في الدعم الفني 🤝🔥\n\nكيف يمكننا مساعدتك؟\n\n1️⃣ استفسار عن حجز موجود 📋\n2️⃣ تعديل حجز 📝\n3️⃣ إلغاء حجز ❌\n4️⃣ شكوى أو اقتراح 💡\n\n0️⃣ رجوع ⬅️",
+        "options": {
+            "1": "support_details",
+            "2": "support_details",
+            "3": "support_details",
+            "4": "support_details",
+            "0": "welcome"
+        }
+    },
+    "unit_details": {
+        "text": "من فضلك أرسل البيانات التالية:\n\n📍 المدينة / المنطقة\n📅 تاريخ الوصول والمغادرة\n👥 عدد الأشخاص\n🛏️ عدد الغرف (اختياري)\n\n_مثال:_ الرياض، من 10/12 إلى 15/12، 4 أشخاص، غرفتين",
+        "requiresInput": true
+    },
+    "car_details": {
+        "text": "من فضلك أرسل البيانات التالية:\n\n📍 المدينة\n📅 تاريخ الاستلام والتسليم\n🚗 نوع السيارة المفضل (اختياري)\n\n_مثال:_ جدة، من 5/12 إلى 8/12، سيارة عائلية",
+        "requiresInput": true
+    },
+    "tour_details": {
+        "text": "من فضلك أرسل البيانات التالية:\n\n📍 المدينة أو المعلم السياحي\n📅 التاريخ المفضل\n👥 عدد الأشخاص\n\n_مثال:_ الطائف، يوم الجمعة 15/12، 3 أشخاص",
+        "requiresInput": true
+    },
+    "guide_details": {
+        "text": "من فضلك أرسل البيانات التالية:\n\n📍 المدينة\n📅 التاريخ والمدة\n👥 عدد الأشخاص\n🗣️ اللغة المطلوبة\n\n_مثال:_ الدمام، يومين من 20/12، 5 أشخاص، عربي",
+        "requiresInput": true
+    },
+    "support_details": {
+        "text": "من فضلك اكتب استفسارك أو رقم الحجز، وسيتواصل معك الدعم الفني قريبًا 📞",
+        "requiresInput": true
+    },
+    "confirmation": {
+        "text": "✅ تم استلام طلبك بنجاح!\n\n📋 التفاصيل:\n{details}\n\n🔄 سيتواصل معك موظفنا المختص خلال دقائق.\n\nشكرًا لتواصلك مع *المسار الساخن للسفر والسياحة* 🔥\n\nهل تريد إجراء حجز آخر؟\n1️⃣ نعم\n2️⃣ لا، شكراً",
+        "options": {
+            "1": "welcome",
+            "2": "goodbye"
+        }
+    },
+    "goodbye": {
+        "text": "شكراً لتواصلك معنا! 🙏\nنسعد بخدمتك في أي وقت 🔥🌍",
+        "end": true
+    }
+};
 
 // Firebase helper functions
 async function saveConversationToFirebase(conversationId, conversation) {
@@ -264,22 +355,43 @@ async function handleIncomingMessage(message) {
             await saveMessagesToFirebase(conversationId, [newMessage]);
         }
         
-        // Auto-reply with simple chatbot
+        // Auto-reply with Question Tree chatbot
         if (message.body && !message.fromMe) {
-            const userMessage = message.body.trim().toLowerCase();
+            const userMessage = message.body.trim();
             let botReply = '';
             
-            // Simple bot responses
-            if (userMessage.includes('مرحبا') || userMessage.includes('السلام') || userMessage.includes('hello') || userMessage.includes('hi')) {
-                botReply = 'مرحباً! 👋 أهلاً بك. كيف يمكنني مساعدتك اليوم؟';
-            } else if (userMessage.includes('ساعات العمل') || userMessage.includes('مواعيد')) {
-                botReply = 'ساعات العمل: من السبت إلى الخميس، 9 صباحاً - 5 مساءً';
-            } else if (userMessage.includes('سعر') || userMessage.includes('price')) {
-                botReply = 'للاستفسار عن الأسعار، يرجى التواصل مع فريق المبيعات';
-            } else if (userMessage.includes('شكرا') || userMessage.includes('thanks')) {
-                botReply = 'العفو! 😊 نحن هنا دائماً لمساعدتك';
+            // Get user's current session
+            let currentQuestion = userSessions.get(conversationId) || 'welcome';
+            const questionData = questionTree[currentQuestion];
+            
+            // Check if waiting for user input
+            if (questionData && questionData.requiresInput) {
+                // User sent their details
+                botReply = questionTree.confirmation.text.replace('{details}', userMessage);
+                userSessions.set(conversationId, 'confirmation');
+            } else if (questionData && questionData.options) {
+                // User selected an option
+                const selectedOption = questionData.options[userMessage];
+                
+                if (selectedOption) {
+                    const nextQuestion = questionTree[selectedOption];
+                    if (nextQuestion) {
+                        botReply = nextQuestion.text;
+                        userSessions.set(conversationId, selectedOption);
+                        
+                        // If it's the end, reset session
+                        if (nextQuestion.end) {
+                            userSessions.delete(conversationId);
+                        }
+                    }
+                } else {
+                    // Invalid option, repeat current question
+                    botReply = '❌ اختيار غير صحيح. من فضلك اختر من الخيارات التالية:\n\n' + questionData.text;
+                }
             } else {
-                botReply = 'شكراً لرسالتك! سيتم الرد عليك قريباً من قبل أحد ممثلينا.';
+                // Start from welcome
+                botReply = questionTree.welcome.text;
+                userSessions.set(conversationId, 'welcome');
             }
             
             // Send bot reply
