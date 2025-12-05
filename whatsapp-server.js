@@ -218,6 +218,12 @@ client.on('ready', async () => {
         }
         
         console.log(`✅ Loaded ${conversations.size} conversations with messages`);
+        
+        // Also try to load from Firebase
+        if (db && conversations.size === 0) {
+            console.log('📥 Trying to load from Firebase...');
+            await loadConversationsFromFirebase();
+        }
     } catch (error) {
         console.error('Error loading chats:', error);
     }
@@ -252,11 +258,14 @@ client.on('loading_screen', (percent, message) => {
 // Receive Messages
 client.on('message', async (msg) => {
     try {
+        console.log(`📨 New message received from: ${msg.from}`);
         const contact = await msg.getContact();
         const chat = await msg.getChat();
         
         const conversationId = msg.from;
         const phoneNumber = contact.number || msg.from.replace('@c.us', '');
+        
+        console.log(`👤 Contact: ${contact.pushname || phoneNumber}`);
         
         // Create or update conversation
         if (!conversations.has(conversationId)) {
