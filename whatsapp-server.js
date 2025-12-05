@@ -3,14 +3,96 @@ const qrcode = require('qrcode-terminal');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const admin = require('firebase-admin');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Initialize Firebase Admin
+let db = null;
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        db = admin.firestore();
+        console.log('🔥 Firebase initialized successfully');
+    } catch (error) {
+        console.error('❌ Firebase initialization failed:', error.message);
+    }
+}
+
 // Store for conversations and messages
 const conversations = new Map();
 const messages = new Map();
+
+// Firebase helper functions
+async function saveConversationToFirebase(conversationId, conversation) {
+    if (!db) return;
+    try {
+        await db.collection('conversations').doc(conversationId).set({
+            ...conversation,
+            timestamp: admin.firestore.Timestamp.fromDate(conversation.timestamp)
+        });
+    } catch (error) {
+        console.error('Error saving conversation to Firebase:', error.message);
+    }
+}
+
+async function saveMessagesToFirebase(conversationId, messagesList) {
+    if (!db) return;
+    try {
+        const batch = db.batch();
+        messagesList.forEach(msg => {
+            const msgRef = db.collection('messages').doc(conversationId).collection('items').doc(msg.id);
+            batch.set(msgRef, {
+                ...msg,
+                timestamp: admin.firestore.Timestamp.fromDate(msg.timestamp)
+            });
+        });
+        await batch.commit();
+    } catch (error) {
+        console.error('Error saving messages to Firebase:', error.message);
+    }
+}
+
+async function loadConversationsFromFirebase() {
+    if (!db) return;
+    try {
+        const snapshot = await db.collection('conversations').get();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            conversations.set(doc.id, {
+                ...data,
+                timestamp: data.timestamp.toDate()
+            });
+        });
+        console.log(`📥 Loaded ${conversations.size} conversations from Firebase`);
+    } catch (error) {
+        console.error('Error loading conversations from Firebase:', error.message);
+    }
+}
+
+async function loadMessagesFromFirebase(conversationId) {
+    if (!db) return [];
+    try {
+        const snapshot = await db.collection('messages').doc(conversationId).collection('items').orderBy('timestamp').get();
+        const msgList = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            msgList.push({
+                ...data,
+                timestamp: data.timestamp.toDate()
+            });
+        });
+        return msgList;
+    } catch (error) {
+        console.error('Error loading messages from Firebase:', error.message);
+        return [];
+    }
+}
 
 // Use persistent storage path for Railway Volume
 const SESSION_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH 
@@ -112,6 +194,12 @@ client.on('ready', async () => {
                         });
                     }
                     messages.set(conversationId, msgList);
+                    
+                    // Save to Firebase
+                    if (db) {
+                        await saveConversationToFirebase(conversationId, conversations.get(conversationId));
+                        await saveMessagesToFirebase(conversationId, msgList);
+                    }
                 }
             } catch (chatError) {
                 console.error('Error loading chat:', chatError.message);
@@ -183,14 +271,22 @@ client.on('message', async (msg) => {
             messages.set(conversationId, []);
         }
         
-        messages.get(conversationId).push({
+        const newMessage = {
             id: msg.id._serialized,
             text: msg.body,
             sender: 'user',
             timestamp: new Date(msg.timestamp * 1000),
             status: 'delivered',
             type: msg.type
-        });
+        };
+        
+        messages.get(conversationId).push(newMessage);
+        
+        // Save to Firebase
+        if (db) {
+            await saveConversationToFirebase(conversationId, conversations.get(conversationId));
+            await saveMessagesToFirebase(conversationId, [newMessage]);
+        }
         
         console.log(`📨 Message from ${contact.pushname || phoneNumber}: ${msg.body}`);
         
@@ -246,16 +342,39 @@ app.post('/restart', async (req, res) => {
 });
 
 // Get Conversations
-app.get('/api/conversations', (req, res) => {
-    const convArray = Array.from(conversations.values());
-    res.json(convArray);
+app.get('/api/conversations', async (req, res) => {
+    try {
+        // Load from Firebase if not in memory
+        if (conversations.size === 0 && db) {
+            await loadConversationsFromFirebase();
+        }
+        const convArray = Array.from(conversations.values());
+        res.json(convArray);
+    } catch (error) {
+        console.error('Error getting conversations:', error);
+        res.json([]);
+    }
 });
 
 // Get Messages for a conversation
-app.get('/api/messages/:conversationId', (req, res) => {
-    const { conversationId } = req.params;
-    const msgs = messages.get(conversationId) || [];
-    res.json(msgs);
+app.get('/api/messages/:conversationId', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        let msgs = messages.get(conversationId);
+        
+        // Load from Firebase if not in memory
+        if (!msgs && db) {
+            msgs = await loadMessagesFromFirebase(conversationId);
+            if (msgs.length > 0) {
+                messages.set(conversationId, msgs);
+            }
+        }
+        
+        res.json(msgs || []);
+    } catch (error) {
+        console.error('Error getting messages:', error);
+        res.json([]);
+    }
 });
 
 // Send Message
