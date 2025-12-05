@@ -54,11 +54,64 @@ let isReady = false;
 let isConnecting = false;
 
 // WhatsApp Ready
-client.on('ready', () => {
+client.on('ready', async () => {
     console.log('✅ WhatsApp is ready!');
     isReady = true;
     isConnecting = false;
     currentQR = null;
+    
+    // Load existing chats
+    try {
+        console.log('📥 Loading existing chats...');
+        const chats = await client.getChats();
+        console.log(`📊 Found ${chats.length} chats`);
+        
+        for (const chat of chats) {
+            try {
+                // Get last 20 messages from each chat
+                const chatMessages = await chat.fetchMessages({ limit: 20 });
+                
+                if (chatMessages.length > 0) {
+                    const contact = await chat.getContact();
+                    const conversationId = chat.id._serialized;
+                    const phoneNumber = contact.number || chat.id.user;
+                    
+                    // Create conversation
+                    const lastMsg = chatMessages[chatMessages.length - 1];
+                    conversations.set(conversationId, {
+                        id: conversationId,
+                        name: chat.name || contact.pushname || contact.name || phoneNumber,
+                        phone: phoneNumber,
+                        avatar: await contact.getProfilePicUrl().catch(() => null),
+                        lastMessage: lastMsg.body || 'رسالة وسائط',
+                        timestamp: new Date(lastMsg.timestamp * 1000),
+                        unreadCount: chat.unreadCount || 0,
+                        status: 'active'
+                    });
+                    
+                    // Store messages
+                    const msgList = [];
+                    for (const msg of chatMessages) {
+                        msgList.push({
+                            id: msg.id._serialized,
+                            text: msg.body || '',
+                            sender: msg.fromMe ? 'agent' : 'user',
+                            timestamp: new Date(msg.timestamp * 1000),
+                            status: msg.ack >= 3 ? 'read' : msg.ack >= 2 ? 'delivered' : 'sent',
+                            type: msg.type
+                        });
+                    }
+                    messages.set(conversationId, msgList);
+                }
+            } catch (chatError) {
+                console.error('Error loading chat:', chatError.message);
+            }
+        }
+        
+        console.log(`✅ Loaded ${conversations.size} conversations with messages`);
+    } catch (error) {
+        console.error('Error loading chats:', error);
+    }
 });
 
 // Authentication
