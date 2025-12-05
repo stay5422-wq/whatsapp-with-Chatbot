@@ -85,9 +85,11 @@ async function initializeClient() {
             '--disable-software-rasterizer'
         ],
         puppeteerOptions: {
-            executablePath: '/usr/bin/chromium',
+            executablePath: process.env.CHROMIUM_PATH || undefined,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            userDataDir: '/tmp/wpp-session-' + Date.now()
+            userDataDir: process.platform === 'win32' 
+                ? `${process.env.TEMP || 'C:\\Windows\\Temp'}\\wpp-session-${Date.now()}` 
+                : `/tmp/wpp-session-${Date.now()}`
         },
         catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
             console.log('📱 QR Code received! Attempt:', attempts);
@@ -102,18 +104,27 @@ async function initializeClient() {
         },
         statusFind: (statusSession, session) => {
             console.log(`📊 Status: ${statusSession}`);
-            if (statusSession === 'qrReadSuccess') {
+            if (statusSession === 'qrReadSuccess' || statusSession === 'qrReadSucces') {
                 console.log('🔐 QR Code scanned!');
                 isConnecting = true;
             }
-            if (statusSession === 'isLogged') {
+            if (statusSession === 'isLogged' || statusSession === 'authenticated' || statusSession === 'browserConnected') {
                 console.log('✅ WhatsApp is ready!');
                 isReady = true;
                 isConnecting = false;
                 currentQR = null;
                 loadExistingChats();
             }
+        },
+        onLoadingScreen: (percent, message) => {
+            console.log(`⏳ Loading: ${percent}% - ${message}`);
         }
+    }).then(client => {
+        console.log('✅ Client initialized successfully!');
+        isReady = true;
+        isConnecting = false;
+        currentQR = null;
+        return client;
     });
 
     // Listen for messages
@@ -184,8 +195,19 @@ async function handleIncomingMessage(message) {
     try {
         console.log(`📨 New message from: ${message.from}`);
         
+        // Ignore status broadcasts
+        if (message.from === 'status@broadcast' || !message.from) {
+            return;
+        }
+        
         const conversationId = message.from;
         const contact = await client.getContact(message.from);
+        
+        // Skip if contact is null
+        if (!contact || !contact.id) {
+            console.log('⚠️ Skipping message: invalid contact');
+            return;
+        }
         const phoneNumber = contact.id.user;
         
         // Create or update conversation

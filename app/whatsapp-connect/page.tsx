@@ -208,11 +208,13 @@ export default function WhatsAppConnection() {
 
                   <div className="inline-block p-6 bg-white rounded-2xl shadow-2xl">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-                        qrCode
-                      )}`}
+                      src={qrCode}
                       alt="WhatsApp QR Code"
                       className="w-64 h-64 md:w-80 md:h-80"
+                      onError={(e) => {
+                        console.error('QR Code image failed to load:', qrCode);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   </div>
 
