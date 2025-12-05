@@ -2,6 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -11,9 +12,18 @@ app.use(express.json());
 const conversations = new Map();
 const messages = new Map();
 
+// Use persistent storage path for Railway Volume
+const SESSION_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, '.wwebjs_auth')
+    : './.wwebjs_auth';
+
+console.log(`📁 Using session path: ${SESSION_PATH}`);
+
 // Initialize WhatsApp Client
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        dataPath: SESSION_PATH
+    }),
     puppeteer: {
         headless: true,
         executablePath: '/usr/bin/chromium',
