@@ -88,8 +88,8 @@ async function initializeClient() {
             executablePath: process.env.CHROMIUM_PATH || undefined,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             userDataDir: process.platform === 'win32' 
-                ? `${process.env.TEMP || 'C:\\Windows\\Temp'}\\wpp-session-${Date.now()}` 
-                : `/tmp/wpp-session-${Date.now()}`
+                ? `${process.env.TEMP || 'C:\\Windows\\Temp'}\\wpp-session-persistent` 
+                : `/tmp/wpp-session-persistent`
         },
         catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
             console.log('📱 QR Code received! Attempt:', attempts);
