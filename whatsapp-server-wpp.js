@@ -203,55 +203,6 @@ async function loadExistingChats() {
     }
 }
 
-// Bot session storage
-const botSessions = new Map();
-
-// Simple bot reply handler
-async function handleBotReply(conversationId, userMessage) {
-    try {
-        // Get or create session
-        if (!botSessions.has(conversationId)) {
-            botSessions.set(conversationId, { currentQuestion: 'welcome' });
-        }
-        
-        const session = botSessions.get(conversationId);
-        const msg = userMessage.trim();
-        
-        // Welcome message
-        if (session.currentQuestion === 'welcome') {
-            const welcomeText = `مرحبًا بك في *المسار الساخن للسفر والسياحة* 🔥🌍\n\nيشرفنا نخدمك! اختر الخدمة المطلوبة:\n\n1️⃣ حجز وحدات الضيافة 🏘️\n2️⃣ حجز سيارات 🚗\n3️⃣ البرامج والخدمات السياحية 🗺️\n4️⃣ المرشدين السياحيين 👨‍🏫\n5️⃣ خدمة العملاء 💬`;
-            
-            await client.sendText(conversationId, welcomeText);
-            session.currentQuestion = 'awaiting_choice';
-            return;
-        }
-        
-        // Handle user choice
-        if (session.currentQuestion === 'awaiting_choice') {
-            if (msg === '1') {
-                await client.sendText(conversationId, '🏘️ ممتاز! تم اختيار *حجز وحدات الضيافة*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
-                session.currentQuestion = 'completed';
-            } else if (msg === '2') {
-                await client.sendText(conversationId, '🚗 رائع! تم اختيار *حجز سيارات*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
-                session.currentQuestion = 'completed';
-            } else if (msg === '3') {
-                await client.sendText(conversationId, '🗺️ عظيم! تم اختيار *البرامج والخدمات السياحية*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
-                session.currentQuestion = 'completed';
-            } else if (msg === '4') {
-                await client.sendText(conversationId, '👨‍🏫 ممتاز! تم اختيار *المرشدين السياحيين*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
-                session.currentQuestion = 'completed';
-            } else if (msg === '5') {
-                await client.sendText(conversationId, '💬 مرحبًا بك في *خدمة العملاء*\n\nسيتم توصيلك بأحد ممثلي خدمة العملاء الآن...');
-                session.currentQuestion = 'completed';
-            } else {
-                await client.sendText(conversationId, '⚠️ اختيار غير صحيح. الرجاء اختيار رقم من 1 إلى 5');
-            }
-        }
-    } catch (error) {
-        console.error('Error in bot reply:', error);
-    }
-}
-
 // Handle incoming messages
 async function handleIncomingMessage(message) {
     try {
@@ -313,9 +264,42 @@ async function handleIncomingMessage(message) {
             await saveMessagesToFirebase(conversationId, [newMessage]);
         }
         
-        // Auto-reply with bot if message is from user
-        if (!message.fromMe && message.body) {
-            await handleBotReply(conversationId, message.body);
+        // Auto-reply with simple chatbot
+        if (message.body && !message.fromMe) {
+            const userMessage = message.body.trim().toLowerCase();
+            let botReply = '';
+            
+            // Simple bot responses
+            if (userMessage.includes('مرحبا') || userMessage.includes('السلام') || userMessage.includes('hello') || userMessage.includes('hi')) {
+                botReply = 'مرحباً! 👋 أهلاً بك. كيف يمكنني مساعدتك اليوم؟';
+            } else if (userMessage.includes('ساعات العمل') || userMessage.includes('مواعيد')) {
+                botReply = 'ساعات العمل: من السبت إلى الخميس، 9 صباحاً - 5 مساءً';
+            } else if (userMessage.includes('سعر') || userMessage.includes('price')) {
+                botReply = 'للاستفسار عن الأسعار، يرجى التواصل مع فريق المبيعات';
+            } else if (userMessage.includes('شكرا') || userMessage.includes('thanks')) {
+                botReply = 'العفو! 😊 نحن هنا دائماً لمساعدتك';
+            } else {
+                botReply = 'شكراً لرسالتك! سيتم الرد عليك قريباً من قبل أحد ممثلينا.';
+            }
+            
+            // Send bot reply
+            try {
+                await client.sendText(conversationId, botReply);
+                console.log(`🤖 Bot replied to ${phoneNumber}`);
+                
+                // Add bot message to conversation
+                const botMessage = {
+                    id: `bot_${Date.now()}`,
+                    text: botReply,
+                    sender: 'agent',
+                    timestamp: new Date(),
+                    status: 'delivered',
+                    type: 'chat'
+                };
+                messages.get(conversationId).push(botMessage);
+            } catch (err) {
+                console.error('Error sending bot reply:', err.message);
+            }
         }
         
         console.log(`✅ Message processed`);
