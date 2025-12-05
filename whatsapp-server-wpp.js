@@ -203,6 +203,55 @@ async function loadExistingChats() {
     }
 }
 
+// Bot session storage
+const botSessions = new Map();
+
+// Simple bot reply handler
+async function handleBotReply(conversationId, userMessage) {
+    try {
+        // Get or create session
+        if (!botSessions.has(conversationId)) {
+            botSessions.set(conversationId, { currentQuestion: 'welcome' });
+        }
+        
+        const session = botSessions.get(conversationId);
+        const msg = userMessage.trim();
+        
+        // Welcome message
+        if (session.currentQuestion === 'welcome') {
+            const welcomeText = `مرحبًا بك في *المسار الساخن للسفر والسياحة* 🔥🌍\n\nيشرفنا نخدمك! اختر الخدمة المطلوبة:\n\n1️⃣ حجز وحدات الضيافة 🏘️\n2️⃣ حجز سيارات 🚗\n3️⃣ البرامج والخدمات السياحية 🗺️\n4️⃣ المرشدين السياحيين 👨‍🏫\n5️⃣ خدمة العملاء 💬`;
+            
+            await client.sendText(conversationId, welcomeText);
+            session.currentQuestion = 'awaiting_choice';
+            return;
+        }
+        
+        // Handle user choice
+        if (session.currentQuestion === 'awaiting_choice') {
+            if (msg === '1') {
+                await client.sendText(conversationId, '🏘️ ممتاز! تم اختيار *حجز وحدات الضيافة*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
+                session.currentQuestion = 'completed';
+            } else if (msg === '2') {
+                await client.sendText(conversationId, '🚗 رائع! تم اختيار *حجز سيارات*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
+                session.currentQuestion = 'completed';
+            } else if (msg === '3') {
+                await client.sendText(conversationId, '🗺️ عظيم! تم اختيار *البرامج والخدمات السياحية*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
+                session.currentQuestion = 'completed';
+            } else if (msg === '4') {
+                await client.sendText(conversationId, '👨‍🏫 ممتاز! تم اختيار *المرشدين السياحيين*\n\nسيتم التواصل معك من قبل أحد ممثلي خدمة العملاء قريبًا.');
+                session.currentQuestion = 'completed';
+            } else if (msg === '5') {
+                await client.sendText(conversationId, '💬 مرحبًا بك في *خدمة العملاء*\n\nسيتم توصيلك بأحد ممثلي خدمة العملاء الآن...');
+                session.currentQuestion = 'completed';
+            } else {
+                await client.sendText(conversationId, '⚠️ اختيار غير صحيح. الرجاء اختيار رقم من 1 إلى 5');
+            }
+        }
+    } catch (error) {
+        console.error('Error in bot reply:', error);
+    }
+}
+
 // Handle incoming messages
 async function handleIncomingMessage(message) {
     try {
@@ -262,6 +311,11 @@ async function handleIncomingMessage(message) {
         if (db) {
             await saveConversationToFirebase(conversationId, conversations.get(conversationId));
             await saveMessagesToFirebase(conversationId, [newMessage]);
+        }
+        
+        // Auto-reply with bot if message is from user
+        if (!message.fromMe && message.body) {
+            await handleBotReply(conversationId, message.body);
         }
         
         console.log(`✅ Message processed`);
