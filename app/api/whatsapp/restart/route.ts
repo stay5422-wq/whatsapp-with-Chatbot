@@ -12,7 +12,7 @@ export async function POST() {
     }
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // Increased to 30s
     
     try {
       const response = await fetch(`${whatsappServerUrl}/restart`, {
@@ -23,10 +23,12 @@ export async function POST() {
       clearTimeout(timeoutId);
     
       if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('Restart error response:', response.status, errorText);
+        throw new Error(`Server error: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ message: 'Restarting...' }));
       return NextResponse.json({
         success: true,
         message: data.message || 'Restarting WhatsApp connection...',
@@ -34,7 +36,11 @@ export async function POST() {
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        throw new Error('Request timeout - server took too long to respond');
+        // Timeout is OK for restart - it means the server is restarting
+        return NextResponse.json({
+          success: true,
+          message: 'WhatsApp connection is restarting...',
+        });
       }
       throw fetchError;
     }

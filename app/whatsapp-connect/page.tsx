@@ -65,19 +65,29 @@ export default function WhatsAppConnection() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/whatsapp/restart', { method: 'POST' });
-      const data = await response.json();
+      const response = await fetch('/api/whatsapp/restart', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
       
-      if (data.success) {
-        toast.success('جاري إعادة الاتصال...');
-        setTimeout(checkConnection, 3000);
-      } else {
-        throw new Error(data.error || 'فشلت إعادة الاتصال');
+      if (!response.ok && response.status !== 500) {
+        throw new Error(`خطأ في الخادم: ${response.status}`);
       }
+      
+      const data = await response.json().catch(() => ({ success: true }));
+      
+      toast.success('جاري إعادة الاتصال...');
+      setTimeout(checkConnection, 5000); // Wait 5 seconds before checking
+      
     } catch (err: any) {
-      setError(err.message || 'فشلت إعادة الاتصال');
-      toast.error(err.message || 'فشلت إعادة الاتصال');
-      setIsLoading(false);
+      console.error('Restart error:', err);
+      // Don't show error for timeout - it's expected during restart
+      if (!err.message?.includes('timeout')) {
+        toast.error('حدث خطأ، جرب مرة أخرى');
+      } else {
+        toast.success('جاري إعادة الاتصال...');
+        setTimeout(checkConnection, 5000);
+      }
     }
   };
 
