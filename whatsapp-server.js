@@ -216,11 +216,32 @@ app.post('/api/send', async (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', isReady });
+    res.json({ 
+        status: 'ok', 
+        isReady,
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        service: 'WhatsApp Business Server',
+        status: 'running',
+        connected: isReady,
+        endpoints: {
+            status: '/status',
+            restart: '/restart (POST)',
+            health: '/health'
+        }
+    });
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 WhatsApp Server running on port ${PORT}`);
+    console.log(`🌐 Server URL: http://0.0.0.0:${PORT}`);
     console.log(`📱 Waiting for QR Code scan...`);
+    console.log(`✅ Health check: http://0.0.0.0:${PORT}/health`);
 });
