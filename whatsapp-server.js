@@ -128,17 +128,28 @@ const client = new Client({
             '--disable-default-apps',
             '--window-size=1920,1080'
         ],
-        timeout: 60000
-    }
+        timeout: 120000
+    },
+    qrMaxRetries: 5,
+    restartOnAuthFail: true,
+    takeoverOnConflict: true,
+    takeoverTimeoutMs: 0
 });
 
 // QR Code Generation
+let qrRetryCount = 0;
 client.on('qr', (qr) => {
-    console.log('🔥 Scan this QR code with your WhatsApp:');
+    qrRetryCount++;
+    console.log(`🔥 QR Code generated (attempt ${qrRetryCount})`);
+    console.log('📱 Please scan within 30 seconds!');
     qrcode.generate(qr, { small: true });
     
-    // Also send QR to frontend
+    // Store QR and reset connecting state
     currentQR = qr;
+    isConnecting = false;
+    
+    // QR expires after 30 seconds
+    console.log('⏰ QR Code will expire in 30 seconds');
 });
 
 let currentQR = null;
