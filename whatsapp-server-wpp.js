@@ -67,7 +67,7 @@ async function initializeClient() {
     console.log('🚀 Initializing WPPConnect...');
     
     client = await wppconnect.create({
-        session: 'whatsapp-session',
+        session: 'whatsapp-main',
         headless: true,
         devtools: false,
         useChrome: false,
@@ -75,7 +75,7 @@ async function initializeClient() {
         logQR: false,
         disableWelcome: true,
         updatesLog: false,
-        autoClose: 300000, // 5 minutes instead of 1 minute
+        autoClose: 300000, // 5 minutes
         browserArgs: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -86,10 +86,7 @@ async function initializeClient() {
         ],
         puppeteerOptions: {
             executablePath: process.env.CHROMIUM_PATH || undefined,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            userDataDir: process.platform === 'win32' 
-                ? `${process.env.TEMP || 'C:\\Windows\\Temp'}\\wpp-session-persistent` 
-                : `/tmp/wpp-session-persistent`
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         },
         catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
             console.log('📱 QR Code received! Attempt:', attempts);
@@ -119,12 +116,20 @@ async function initializeClient() {
         onLoadingScreen: (percent, message) => {
             console.log(`⏳ Loading: ${percent}% - ${message}`);
         }
-    }).then(client => {
+    }).then(async (clientInstance) => {
         console.log('✅ Client initialized successfully!');
         isReady = true;
         isConnecting = false;
         currentQR = null;
-        return client;
+        
+        // Load existing chats after connection
+        try {
+            await loadExistingChats();
+        } catch (err) {
+            console.error('Error loading initial chats:', err.message);
+        }
+        
+        return clientInstance;
     });
 
     // Listen for messages
@@ -139,16 +144,23 @@ async function initializeClient() {
 async function loadExistingChats() {
     try {
         console.log('📥 Loading existing chats...');
+        
+        // Wait a bit for WhatsApp to sync
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
         const chats = await client.getAllChats();
         console.log(`📊 Found ${chats.length} chats`);
         
         for (const chat of chats.slice(0, 50)) { // Load first 50 chats
             try {
-                const messages = await client.getMessages(chat.id._serialized, { count: 20 });
+                const messages = await client.getAllMessagesInChat(chat.id._serialized, true, false);
                 
-                if (messages.length > 0) {
+                // Get last 30 messages only
+                const recentMessages = messages.slice(-30);
+                
+                if (recentMessages.length > 0) {
                     const conversationId = chat.id._serialized;
-                    const lastMsg = messages[messages.length - 1];
+                    const lastMsg = recentMessages[recentMessages.length - 1];
                     
                     conversations.set(conversationId, {
                         id: conversationId,
@@ -162,8 +174,8 @@ async function loadExistingChats() {
                     });
                     
                     // Store messages
-                    const msgList = messages.map(msg => ({
-                        id: msg.id,
+                    const msgList = recentMessages.map(msg => ({
+                        id: msg.id._serialized || msg.id,
                         text: msg.body || '',
                         sender: msg.fromMe ? 'agent' : 'user',
                         timestamp: new Date(msg.timestamp * 1000),
