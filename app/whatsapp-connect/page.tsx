@@ -8,12 +8,13 @@ import { toast } from 'react-hot-toast';
 export default function WhatsAppConnection() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     checkConnection();
-    const interval = setInterval(checkConnection, 5000); // Check every 5 seconds
+    const interval = setInterval(checkConnection, 3000); // Check every 3 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -29,16 +30,25 @@ export default function WhatsAppConnection() {
       
       if (data.connected) {
         setIsConnected(true);
+        setIsConnecting(false);
+        setQrCode(null);
+        setIsLoading(false);
+        setError(null);
+        toast.success('تم الاتصال بواتساب بنجاح!');
+      } else if (data.connecting) {
+        setIsConnecting(true);
         setQrCode(null);
         setIsLoading(false);
         setError(null);
       } else if (data.qr) {
         setQrCode(data.qr);
         setIsConnected(false);
+        setIsConnecting(false);
         setIsLoading(false);
         setError(null);
       } else {
         setIsLoading(false);
+        setIsConnecting(false);
         if (data.message) {
           setError(data.message);
         }
@@ -47,6 +57,7 @@ export default function WhatsAppConnection() {
       console.error('Error checking connection:', err);
       setError(err.message || 'فشل الاتصال بالسيرفر');
       setIsLoading(false);
+      setIsConnecting(false);
     }
   };
 
@@ -167,6 +178,12 @@ export default function WhatsAppConnection() {
                 <div className="flex flex-col items-center justify-center py-16">
                   <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"></div>
                   <p className="text-gray-400">جاري تحميل رمز QR...</p>
+                </div>
+              ) : isConnecting ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin mb-4"></div>
+                  <p className="text-green-400 text-xl font-semibold mb-2">جاري الاتصال...</p>
+                  <p className="text-gray-400">تم مسح الكود بنجاح، يرجى الانتظار</p>
                 </div>
               ) : qrCode ? (
                 <>

@@ -51,11 +51,40 @@ client.on('qr', (qr) => {
 
 let currentQR = null;
 let isReady = false;
+let isConnecting = false;
 
 // WhatsApp Ready
 client.on('ready', () => {
     console.log('✅ WhatsApp is ready!');
     isReady = true;
+    isConnecting = false;
+    currentQR = null;
+});
+
+// Authentication
+client.on('authenticated', () => {
+    console.log('🔐 WhatsApp authenticated!');
+    isConnecting = true;
+});
+
+// Authentication failure
+client.on('auth_failure', (msg) => {
+    console.error('❌ Authentication failed:', msg);
+    isReady = false;
+    isConnecting = false;
+});
+
+// Disconnected
+client.on('disconnected', (reason) => {
+    console.log('📴 WhatsApp disconnected:', reason);
+    isReady = false;
+    isConnecting = false;
+    currentQR = null;
+});
+
+// Loading screen
+client.on('loading_screen', (percent, message) => {
+    console.log(`⏳ Loading: ${percent}% - ${message}`);
 });
 
 // Receive Messages
@@ -122,8 +151,11 @@ app.get('/status', (req, res) => {
     res.json({ 
         connected: isReady,
         qr: currentQR,
+        connecting: isConnecting,
         phoneNumber: client.info?.wid?.user || null,
-        message: isReady ? 'WhatsApp connected' : 'Waiting for QR scan'
+        message: isReady ? 'WhatsApp connected' : 
+                 isConnecting ? 'Connecting...' : 
+                 currentQR ? 'Waiting for QR scan' : 'Initializing...'
     });
 });
 
