@@ -118,6 +118,7 @@ async function initializeClient() {
         }
     }).then(async (clientInstance) => {
         console.log('✅ Client initialized successfully!');
+        client = clientInstance; // Set client first!
         isReady = true;
         isConnecting = false;
         currentQR = null;

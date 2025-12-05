@@ -9,7 +9,6 @@ import ChatArea from '@/components/ChatArea';
 import LoginPage from '@/components/LoginPage';
 import SettingsModal from '@/components/SettingsModal';
 import { Conversation, Message, QuickReply, FilterType, User } from '@/types';
-import { mockUsers } from '@/lib/mockData';
 import { LogOut, Plus, Settings } from 'lucide-react';
 
 // Lazy load components for better performance
@@ -22,7 +21,19 @@ const ContactInfoPanel = dynamic(() => import('@/components/ContactInfoPanel'), 
 });
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('whatsapp_currentUser');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Error loading current user:', e);
+        }
+      }
+    }
+    return null;
+  });
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
@@ -57,7 +68,14 @@ export default function Home() {
         }
       }
     }
-    return mockUsers;
+    return [{
+      id: 'admin',
+      email: 'admin@whatsapp.com',
+      password: 'admin123',
+      name: 'المسؤول',
+      avatar: '👤',
+      role: 'admin'
+    }];
   });
   const [botEnabled, setBotEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -161,6 +179,7 @@ export default function Home() {
   // Handle login
   const handleLogin = useCallback((user: User) => {
     setCurrentUser(user);
+    localStorage.setItem('whatsapp_currentUser', JSON.stringify(user));
     toast.success(`مرحباً ${user.name}!`);
   }, []);
 
