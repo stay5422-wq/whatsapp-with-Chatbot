@@ -1,0 +1,51 @@
+import { NextResponse } from 'next/server';
+
+export async function GET(
+  request: Request,
+  { params }: { params: { conversationId: string } }
+) {
+  try {
+    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL;
+    
+    if (!whatsappServerUrl) {
+      return NextResponse.json([], { status: 200 });
+    }
+
+    const { conversationId } = params;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    try {
+      const response = await fetch(
+        `${whatsappServerUrl}/api/messages/${encodeURIComponent(conversationId)}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          signal: controller.signal,
+        }
+      );
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch messages:', response.status);
+        return NextResponse.json([], { status: 200 });
+      }
+      
+      const data = await response.json();
+      return NextResponse.json(data);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('Request timeout fetching messages');
+        return NextResponse.json([], { status: 200 });
+      }
+      throw fetchError;
+    }
+  } catch (error: any) {
+    console.error('Error fetching messages:', error);
+    return NextResponse.json([], { status: 200 });
+  }
+}

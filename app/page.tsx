@@ -69,6 +69,54 @@ export default function Home() {
     return true;
   });
 
+  // Fetch conversations from WhatsApp server
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchConversations = async () => {
+      try {
+        const response = await fetch('/api/whatsapp/conversations');
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setConversations(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+      }
+    };
+
+    fetchConversations();
+    // Fetch conversations every 5 seconds
+    const interval = setInterval(fetchConversations, 5000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  // Fetch messages when conversation is selected
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`/api/whatsapp/messages/${encodeURIComponent(selectedConversation.id)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            setMessages(prev => ({ ...prev, [selectedConversation.id]: data }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    fetchMessages();
+    // Fetch messages every 3 seconds
+    const interval = setInterval(fetchMessages, 3000);
+    return () => clearInterval(interval);
+  }, [selectedConversation]);
+
   // Save users to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
