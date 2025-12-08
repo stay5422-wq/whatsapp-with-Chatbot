@@ -603,25 +603,39 @@ app.get('/api/messages/:conversationId', async (req, res) => {
         if (msgs.length === 0 && isReady && client) {
             try {
                 console.log(`🔍 Fetching messages from WhatsApp for: ${conversationId}`);
-                const chat = await client.getAllMessagesInChat(conversationId, true, false);
+                
+                // Try different methods to get messages
+                let chat = null;
+                try {
+                    chat = await client.getMessages(conversationId, { count: 50 });
+                } catch (e) {
+                    console.log('getMessages failed, trying loadAndGetAllMessagesInChat...');
+                    try {
+                        chat = await client.loadAndGetAllMessagesInChat(conversationId, true, false);
+                    } catch (e2) {
+                        console.log('loadAndGetAllMessagesInChat failed, trying getAllMessagesInChat...');
+                        chat = await client.getAllMessagesInChat(conversationId, true, false);
+                    }
+                }
                 
                 if (chat && chat.length > 0) {
+                    console.log(`📦 Got ${chat.length} messages from WhatsApp`);
                     // Convert WhatsApp messages to our format
                     msgs = chat.slice(-50).map(msg => ({
-                        id: msg.id,
-                        text: msg.body || msg.caption || '',
+                        id: msg.id || msg._serialized || Date.now().toString(),
+                        text: msg.body || msg.content || msg.caption || '',
                         sender: msg.fromMe ? 'agent' : 'user',
-                        timestamp: new Date(msg.timestamp * 1000),
+                        timestamp: new Date(msg.timestamp ? msg.timestamp * 1000 : msg.t * 1000 || Date.now()),
                         status: msg.ack >= 3 ? 'read' : msg.ack >= 2 ? 'delivered' : 'sent',
-                        type: msg.type
+                        type: msg.type || 'chat'
                     }));
                     
                     // Cache the messages
                     messages.set(conversationId, msgs);
-                    console.log(`✅ Fetched ${msgs.length} messages from WhatsApp`);
+                    console.log(`✅ Cached ${msgs.length} messages`);
                 }
             } catch (fetchError) {
-                console.error('Error fetching messages from WhatsApp:', fetchError.message);
+                console.error('❌ Error fetching messages from WhatsApp:', fetchError.message);
             }
         }
         
@@ -677,8 +691,17 @@ app.post('/api/send', async (req, res) => {
         
         // Send message
         console.log(`📨 Sending message to ${phoneNumber}...`);
-        const result = await client.sendText(phoneNumber, message);
-        console.log(`✅ Message sent successfully! ID: ${result.id}`);
+        let result;
+        try {
+            result = await client.sendText(phoneNumber, message);
+            console.log(`✅ Message sent successfully!`, result);
+        } catch (sendError) {
+            console.error(`❌ Failed to send message:`, sendError);
+            return res.status(500).json({ 
+                error: 'فشل إرسال الرسالة',
+                details: sendError.message 
+            });
+        }
         
         // Store sent message
         const conversationId = phoneNumber;
