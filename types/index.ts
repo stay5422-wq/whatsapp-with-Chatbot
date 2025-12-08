@@ -66,12 +66,13 @@ export type Department =
 
 export interface User {
   id: string;
-  username: string;
+  email: string;
   password: string;
   name: string;
+  avatar?: string;
   role: 'admin' | 'agent';
-  department: Department;
-  isActive: boolean;
+  department?: Department;
+  isActive?: boolean;
 }
 
 // Question Tree Types
