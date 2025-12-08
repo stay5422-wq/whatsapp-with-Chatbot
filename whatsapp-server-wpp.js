@@ -435,6 +435,84 @@ app.get('/status', (req, res) => {
     });
 });
 
+// Get QR Code (HTML page)
+app.get('/qr', (req, res) => {
+    if (isReady) {
+        res.send(`
+            <html>
+                <head>
+                    <title>WhatsApp Connected</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>
+                        body { font-family: Arial; text-align: center; padding: 50px; background: #128C7E; color: white; }
+                        h1 { margin-bottom: 20px; }
+                        .status { font-size: 24px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>✅ WhatsApp Connected</h1>
+                    <p class="status">Your WhatsApp is already connected!</p>
+                    <p>You can close this page.</p>
+                </body>
+            </html>
+        `);
+    } else if (currentQR) {
+        res.send(`
+            <html>
+                <head>
+                    <title>WhatsApp QR Code</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>
+                        body { font-family: Arial; text-align: center; padding: 20px; background: #128C7E; color: white; }
+                        h1 { margin-bottom: 10px; }
+                        .qr-container { background: white; padding: 20px; border-radius: 10px; display: inline-block; margin: 20px auto; }
+                        img { max-width: 90vw; height: auto; }
+                        .instructions { max-width: 600px; margin: 20px auto; line-height: 1.6; }
+                    </style>
+                    <script>
+                        // Auto-refresh every 5 seconds to check connection status
+                        setTimeout(() => location.reload(), 5000);
+                    </script>
+                </head>
+                <body>
+                    <h1>📱 Scan QR Code</h1>
+                    <div class="instructions">
+                        <p>1. Open WhatsApp on your phone</p>
+                        <p>2. Tap Menu (⋮) > Linked Devices</p>
+                        <p>3. Tap "Link a Device"</p>
+                        <p>4. Scan this QR code</p>
+                    </div>
+                    <div class="qr-container">
+                        <img src="${currentQR}" alt="QR Code" />
+                    </div>
+                    <p><small>Page will refresh automatically...</small></p>
+                </body>
+            </html>
+        `);
+    } else {
+        res.send(`
+            <html>
+                <head>
+                    <title>WhatsApp Connecting</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>
+                        body { font-family: Arial; text-align: center; padding: 50px; background: #128C7E; color: white; }
+                        .loading { font-size: 48px; margin: 20px; }
+                    </style>
+                    <script>
+                        setTimeout(() => location.reload(), 3000);
+                    </script>
+                </head>
+                <body>
+                    <h1>Connecting to WhatsApp...</h1>
+                    <div class="loading">⏳</div>
+                    <p>Please wait, generating QR code...</p>
+                </body>
+            </html>
+        `);
+    }
+});
+
 // Restart Connection
 app.post('/restart', async (req, res) => {
     try {
