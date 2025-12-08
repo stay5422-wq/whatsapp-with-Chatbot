@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { User } from '@/types';
-import { mockUsers } from '@/lib/mockData';
 import { Lock, User as UserIcon, LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
@@ -16,7 +15,7 @@ interface LoginPageProps {
 }
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,14 +27,39 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     // Simulate API call
     setTimeout(() => {
-      const user = mockUsers.find(
-        (u) => u.username === username && u.password === password && u.isActive
+      // Get users from localStorage or use default admin
+      let users: User[] = [];
+      if (typeof window !== 'undefined') {
+        const savedUsers = localStorage.getItem('whatsapp_users');
+        if (savedUsers) {
+          try {
+            users = JSON.parse(savedUsers);
+          } catch (e) {
+            console.error('Error loading users:', e);
+          }
+        }
+      }
+      
+      // Add default admin if no users
+      if (users.length === 0) {
+        users = [{
+          id: 'admin',
+          email: 'admin@whatsapp.com',
+          password: 'admin123',
+          name: 'المسؤول',
+          avatar: '👤',
+          role: 'admin'
+        }];
+      }
+
+      const user = users.find(
+        (u) => u.email === email && u.password === password
       );
 
       if (user) {
         onLogin(user);
       } else {
-        setError('اسم المستخدم أو كلمة المرور غير صحيحة');
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
       setLoading(false);
     }, 1000);
@@ -198,7 +222,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             transition={{ delay: 0.9, duration: 0.5 }}
           >
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              اسم المستخدم
+              البريد الإلكتروني
             </label>
             <motion.div 
               className="relative"
@@ -206,10 +230,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             >
               <UserIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <motion.input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="أدخل اسم المستخدم"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@whatsapp.com"
                 required
                 whileFocus={{ 
                   borderColor: "rgb(34, 197, 94)",
