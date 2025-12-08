@@ -64,7 +64,7 @@ const SettingsModal = ({
 
     const user: User = {
       id: Date.now().toString(),
-      username: newUser.email,
+      email: newUser.email,
       name: newUser.name,
       password: newUser.password,
       role: newUser.role,
