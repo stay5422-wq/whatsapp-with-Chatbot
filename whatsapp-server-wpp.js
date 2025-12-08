@@ -594,7 +594,38 @@ app.get('/api/conversations', async (req, res) => {
 app.get('/api/messages/:conversationId', async (req, res) => {
     try {
         const { conversationId } = req.params;
-        const msgs = messages.get(conversationId) || [];
+        console.log(`📥 Fetching messages for: ${conversationId}`);
+        
+        // Try to get messages from cache first
+        let msgs = messages.get(conversationId) || [];
+        
+        // If no messages in cache and client is ready, fetch from WhatsApp
+        if (msgs.length === 0 && isReady && client) {
+            try {
+                console.log(`🔍 Fetching messages from WhatsApp for: ${conversationId}`);
+                const chat = await client.getAllMessagesInChat(conversationId, true, false);
+                
+                if (chat && chat.length > 0) {
+                    // Convert WhatsApp messages to our format
+                    msgs = chat.slice(-50).map(msg => ({
+                        id: msg.id,
+                        text: msg.body || msg.caption || '',
+                        sender: msg.fromMe ? 'agent' : 'user',
+                        timestamp: new Date(msg.timestamp * 1000),
+                        status: msg.ack >= 3 ? 'read' : msg.ack >= 2 ? 'delivered' : 'sent',
+                        type: msg.type
+                    }));
+                    
+                    // Cache the messages
+                    messages.set(conversationId, msgs);
+                    console.log(`✅ Fetched ${msgs.length} messages from WhatsApp`);
+                }
+            } catch (fetchError) {
+                console.error('Error fetching messages from WhatsApp:', fetchError.message);
+            }
+        }
+        
+        console.log(`📤 Returning ${msgs.length} messages`);
         res.json(msgs);
     } catch (error) {
         console.error('Error getting messages:', error);
