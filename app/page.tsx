@@ -428,7 +428,7 @@ export default function Home() {
             <div className="text-right">
               <p className="text-sm font-semibold text-white">{currentUser.name}</p>
               <p className="text-xs text-gray-400">
-                {currentUser.role === 'admin' ? 'مدير النظام' : `قسم ${getDepartmentName(currentUser.department)}`}
+                {currentUser.role === 'admin' ? 'مدير النظام' : currentUser.department ? `قسم ${getDepartmentName(currentUser.department)}` : 'موظف'}
               </p>
             </div>
             <div className="flex gap-2">
