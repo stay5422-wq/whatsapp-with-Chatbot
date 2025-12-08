@@ -4,7 +4,7 @@ import { Conversation, Message, QuickReply, User } from '@/types';
 export const mockUsers: User[] = [
   {
     id: '1',
-    username: 'akram',
+    email: 'akram@whatsapp.com',
     password: 'akram2026',
     name: 'Eng. Akram Elmasry',
     role: 'admin',
@@ -13,7 +13,7 @@ export const mockUsers: User[] = [
   },
   {
     id: '2',
-    username: 'units_agent',
+    email: 'units@whatsapp.com',
     password: '123456',
     name: 'موظف الوحدات',
     role: 'agent',
@@ -22,7 +22,7 @@ export const mockUsers: User[] = [
   },
   {
     id: '3',
-    username: 'cars_agent',
+    email: 'cars@whatsapp.com',
     password: '123456',
     name: 'موظف السيارات',
     role: 'agent',
@@ -31,7 +31,7 @@ export const mockUsers: User[] = [
   },
   {
     id: '4',
-    username: 'tourism_agent',
+    email: 'tourism@whatsapp.com',
     password: '123456',
     name: 'موظف الباقات السياحية',
     role: 'agent',
@@ -40,7 +40,7 @@ export const mockUsers: User[] = [
   },
   {
     id: '5',
-    username: 'complaints_agent',
+    email: 'complaints@whatsapp.com',
     password: '123456',
     name: 'موظف الشكاوى',
     role: 'agent',
