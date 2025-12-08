@@ -541,6 +541,44 @@ app.post('/restart', async (req, res) => {
     }
 });
 
+// Clear Session and Logout
+app.post('/logout', async (req, res) => {
+    try {
+        console.log('🚪 Logging out and clearing session...');
+        
+        if (client && isReady) {
+            await client.logout();
+        }
+        
+        if (client) {
+            await client.close();
+        }
+        
+        currentQR = null;
+        isReady = false;
+        isConnecting = false;
+        conversations.clear();
+        messages.clear();
+        userSessions.clear();
+        
+        // Restart to generate new QR
+        setTimeout(() => {
+            initializeClient();
+        }, 3000);
+        
+        res.json({ 
+            success: true,
+            message: 'Logged out successfully. Please scan new QR code.'
+        });
+    } catch (error) {
+        console.error('Error logging out:', error);
+        res.status(500).json({ 
+            success: false,
+            error: error.message 
+        });
+    }
+});
+
 // Get Conversations
 app.get('/api/conversations', async (req, res) => {
     try {
