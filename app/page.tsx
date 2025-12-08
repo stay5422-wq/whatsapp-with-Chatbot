@@ -21,71 +21,68 @@ const ContactInfoPanel = dynamic(() => import('@/components/ContactInfoPanel'), 
 });
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('whatsapp_currentUser');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Error loading current user:', e);
-        }
-      }
-    }
-    return null;
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<{ [conversationId: string]: Message[] }>({});
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('whatsapp_quickReplies');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Error loading quick replies:', e);
-        }
-      }
-    }
-    return [];
-  });
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [users, setUsers] = useState<User[]>(() => {
-    // Load users from localStorage on initial render
-    if (typeof window !== 'undefined') {
-      const savedUsers = localStorage.getItem('whatsapp_users');
-      if (savedUsers) {
-        try {
-          return JSON.parse(savedUsers);
-        } catch (e) {
-          console.error('Error loading users:', e);
-        }
+  const [users, setUsers] = useState<User[]>([{
+    id: 'admin',
+    email: 'admin@whatsapp.com',
+    password: 'admin123',
+    name: 'المسؤول',
+    avatar: '👤',
+    role: 'admin'
+  }]);
+  const [botEnabled, setBotEnabled] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Load data from localStorage after mount (client-side only)
+  useEffect(() => {
+    setMounted(true);
+    
+    // Load current user
+    const savedUser = localStorage.getItem('whatsapp_currentUser');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error('Error loading current user:', e);
       }
     }
-    return [{
-      id: 'admin',
-      email: 'admin@whatsapp.com',
-      password: 'admin123',
-      name: 'المسؤول',
-      avatar: '👤',
-      role: 'admin'
-    }];
-  });
-  const [botEnabled, setBotEnabled] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('whatsapp_botEnabled');
-      if (saved !== null) {
-        return saved === 'true';
+    
+    // Load quick replies
+    const savedReplies = localStorage.getItem('whatsapp_quickReplies');
+    if (savedReplies) {
+      try {
+        setQuickReplies(JSON.parse(savedReplies));
+      } catch (e) {
+        console.error('Error loading quick replies:', e);
       }
     }
-    return true;
-  });
+    
+    // Load users
+    const savedUsers = localStorage.getItem('whatsapp_users');
+    if (savedUsers) {
+      try {
+        setUsers(JSON.parse(savedUsers));
+      } catch (e) {
+        console.error('Error loading users:', e);
+      }
+    }
+    
+    // Load bot enabled status
+    const savedBotStatus = localStorage.getItem('whatsapp_botEnabled');
+    if (savedBotStatus) {
+      setBotEnabled(savedBotStatus === 'true');
+    }
+  }, []);
 
   // Fetch conversations from WhatsApp server
   useEffect(() => {
@@ -372,6 +369,11 @@ export default function Home() {
     setQuickReplies((prev) => prev.filter((reply) => reply.id !== id));
     toast.success('تم حذف الرد السريع');
   }, []);
+
+  // Show loading during hydration
+  if (!mounted) {
+    return null;
+  }
 
   // Show login page if not authenticated
   if (!currentUser) {

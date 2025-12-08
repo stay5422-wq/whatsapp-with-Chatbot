@@ -491,18 +491,47 @@ app.post('/api/send', async (req, res) => {
     try {
         const { to, message } = req.body;
         
+        console.log(`📤 Attempting to send message to: ${to}`);
+        console.log(`📝 Message: ${message}`);
+        
         if (!isReady || !client) {
+            console.error('❌ WhatsApp client not ready');
             return res.status(503).json({ error: 'WhatsApp is not ready yet' });
         }
         
-        // Clean phone number
-        let phoneNumber = to.replace(/[^\d]/g, '');
+        // Clean phone number - handle both formats
+        let phoneNumber = to;
+        
+        // If already has @c.us, use as is
         if (!phoneNumber.includes('@c.us')) {
+            // Remove all non-digits
+            phoneNumber = phoneNumber.replace(/[^\d]/g, '');
+            // Add @c.us suffix
             phoneNumber = phoneNumber + '@c.us';
         }
         
+        console.log(`📞 Formatted number: ${phoneNumber}`);
+        
+        // Check if number exists on WhatsApp
+        try {
+            const numberExists = await client.checkNumberStatus(phoneNumber);
+            console.log(`✅ Number check result:`, numberExists);
+            
+            if (!numberExists || !numberExists.numberExists) {
+                console.error(`❌ Number ${phoneNumber} doesn't exist on WhatsApp`);
+                return res.status(400).json({ 
+                    error: 'رقم الهاتف غير موجود على واتساب',
+                    details: 'Number not found on WhatsApp'
+                });
+            }
+        } catch (checkError) {
+            console.warn('⚠️ Could not verify number, proceeding anyway:', checkError.message);
+        }
+        
         // Send message
+        console.log(`📨 Sending message to ${phoneNumber}...`);
         const result = await client.sendText(phoneNumber, message);
+        console.log(`✅ Message sent successfully! ID: ${result.id}`);
         
         // Store sent message
         const conversationId = phoneNumber;
@@ -511,7 +540,7 @@ app.post('/api/send', async (req, res) => {
         }
         
         const sentMsg = {
-            id: result.id,
+            id: result.id || `msg_${Date.now()}`,
             text: message,
             sender: 'agent',
             timestamp: new Date(),
@@ -526,11 +555,26 @@ app.post('/api/send', async (req, res) => {
             const conv = conversations.get(conversationId);
             conv.lastMessage = message;
             conv.timestamp = new Date();
+            console.log(`✅ Updated conversation: ${conv.name}`);
+        } else {
+            console.log(`⚠️ Conversation not found, creating new one`);
+            // Create conversation if it doesn't exist
+            conversations.set(conversationId, {
+                id: conversationId,
+                name: phoneNumber.replace('@c.us', ''),
+                phone: phoneNumber.replace('@c.us', ''),
+                avatar: null,
+                lastMessage: message,
+                timestamp: new Date(),
+                unreadCount: 0,
+                status: 'active'
+            });
         }
         
         res.json({ 
             success: true, 
-            messageId: result.id
+            messageId: result.id,
+            to: phoneNumber
         });
         
     } catch (error) {
