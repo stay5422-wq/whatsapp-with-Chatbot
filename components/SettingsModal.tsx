@@ -82,7 +82,7 @@ const SettingsModal = ({
 
     onEditUser(editingUser.id, {
       name: editingUser.name,
-      username: editingUser.username,
+      email: editingUser.email,
       role: editingUser.role,
       department: editingUser.department,
       isActive: editingUser.isActive,
@@ -298,11 +298,11 @@ const SettingsModal = ({
                               />
                             </div>
                             <div>
-                              <label className="block text-xs text-gray-400 mb-1">اسم المستخدم</label>
+                              <label className="block text-xs text-gray-400 mb-1">البريد الإلكتروني</label>
                               <input
-                                type="text"
-                                value={editingUser.username}
-                                onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                                type="email"
+                                value={editingUser.email}
+                                onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
                                 className="w-full bg-dark-300 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
                               />
                             </div>
