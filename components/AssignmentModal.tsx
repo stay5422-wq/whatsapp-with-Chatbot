@@ -87,7 +87,7 @@ const AssignmentModal = ({ isOpen, onClose, users, currentAssignedTo, onAssign }
                   <div>
                     <p className="font-semibold">{user.name}</p>
                     <p className="text-sm opacity-75">
-                      {user.role === 'admin' ? 'مدير' : 'موظف'} - {getDepartmentName(user.department)}
+                      {user.role === 'admin' ? 'مدير' : 'موظف'}{user.department ? ` - ${getDepartmentName(user.department)}` : ''}
                     </p>
                   </div>
                   {selectedUserId === user.id && (
