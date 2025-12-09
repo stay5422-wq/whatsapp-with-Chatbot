@@ -49,12 +49,17 @@ export default function Home() {
     
     // Load current user
     const savedUser = localStorage.getItem('whatsapp_currentUser');
+    console.log('🔍 Checking saved user:', savedUser);
     if (savedUser) {
       try {
-        setCurrentUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        console.log('✅ Loaded user from localStorage:', parsedUser);
+        setCurrentUser(parsedUser);
       } catch (e) {
-        console.error('Error loading current user:', e);
+        console.error('❌ Error loading current user:', e);
       }
+    } else {
+      console.log('⚠️ No saved user found in localStorage');
     }
     
     // Load quick replies
@@ -179,8 +184,10 @@ export default function Home() {
 
   // Handle login
   const handleLogin = useCallback((user: User) => {
+    console.log('🔐 Login successful, saving user:', user);
     setCurrentUser(user);
     localStorage.setItem('whatsapp_currentUser', JSON.stringify(user));
+    console.log('💾 User saved to localStorage');
     toast.success(`مرحباً ${user.name}!`);
   }, []);
 
