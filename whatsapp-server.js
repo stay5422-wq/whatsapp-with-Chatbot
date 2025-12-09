@@ -3,10 +3,29 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const admin = require('firebase-admin');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+    }
+});
+
 app.use(cors());
 app.use(express.json());
+
+// WebSocket connection handler
+io.on('connection', (socket) => {
+    console.log('🔌 Client connected:', socket.id);
+    
+    socket.on('disconnect', () => {
+        console.log('🔌 Client disconnected:', socket.id);
+    });
+});
 
 // Initialize Firebase Admin
 let db = null;
@@ -248,6 +267,9 @@ async function initializeClient() {
     // Receive Messages
     client.on('message', async (msg) => {
     try {
+        // Ignore messages from me
+        if (msg.fromMe) return;
+        
         console.log(`📨 New message received from: ${msg.from}`);
         const contact = await msg.getContact();
         const chat = await msg.getChat();
@@ -256,6 +278,7 @@ async function initializeClient() {
         const phoneNumber = contact.number || msg.from.replace('@c.us', '');
         
         console.log(`👤 Contact: ${contact.pushname || phoneNumber}`);
+        console.log(`💬 Message: ${msg.body}`);
         
         // Create or update conversation
         if (!conversations.has(conversationId)) {
@@ -263,7 +286,7 @@ async function initializeClient() {
                 id: conversationId,
                 name: contact.pushname || contact.name || phoneNumber,
                 phone: phoneNumber,
-                avatar: await contact.getProfilePicUrl() || null,
+                avatar: await contact.getProfilePicUrl().catch(() => null),
                 lastMessage: msg.body,
                 timestamp: new Date(msg.timestamp * 1000),
                 unreadCount: 1,
@@ -298,7 +321,147 @@ async function initializeClient() {
             await saveMessagesToFirebase(conversationId, [newMessage]);
         }
         
-        console.log(`📨 Message from ${contact.pushname || phoneNumber}: ${msg.body}`);
+        console.log(`✅ Message stored from ${contact.pushname || phoneNumber}`);
+        
+        // 🤖 AUTO-REPLY: Handle bot responses
+        const messageHistory = messages.get(conversationId);
+        const userMessages = messageHistory.filter(m => m.sender === 'user');
+        
+        let replyMessage = null;
+        
+        // First message - send welcome
+        if (userMessages.length === 1) {
+            console.log(`🤖 Sending welcome message to ${phoneNumber}`);
+            replyMessage = `مرحبًا بك في *المسار الساخن للسفر والسياحة* 🔥🌍
+
+يشرفنا نخدمك! اختر الخدمة المطلوبة:
+
+1️⃣ حجز وحدات الضيافة 🏘️
+2️⃣ حجز سيارات 🚗
+3️⃣ البرامج والخدمات السياحية 🗺️
+4️⃣ المرشدين السياحيين 👨‍🏫
+5️⃣ خدمة العملاء 💬
+
+*أرسل رقم الخيار المطلوب*`;
+        } 
+        // Handle menu selections
+        else {
+            const userInput = msg.body.trim();
+            console.log(`🤖 Processing user input: ${userInput}`);
+            
+            // Main menu responses
+            if (userInput === '1') {
+                replyMessage = `ممتاز! اختر نوع وحدة الضيافة:
+
+1️⃣ شاليهات 🏡
+2️⃣ منتجعات 🏘️
+3️⃣ شقق فندقية 🏢
+0️⃣ رجوع ⬅️
+
+*أرسل رقم الخيار*`;
+            } 
+            else if (userInput === '2') {
+                replyMessage = `اختر نوع حجز السيارة:
+
+1️⃣ حجز سيارة بسائق 🚖
+2️⃣ حجز سيارة بدون سائق 🚗
+0️⃣ رجوع ⬅️
+
+*أرسل رقم الخيار*`;
+            }
+            else if (userInput === '3') {
+                replyMessage = `اختر نوع الخدمة السياحية:
+
+1️⃣ رحلات سياحية يومية 🌅
+2️⃣ برامج سياحية كاملة 📋
+3️⃣ تنظيم مناسبات 🎉
+0️⃣ رجوع ⬅️
+
+*أرسل رقم الخيار*`;
+            }
+            else if (userInput === '4') {
+                replyMessage = `اختر نوع المرشد السياحي:
+
+1️⃣ مرشد لغة عربية 🇸🇦
+2️⃣ مرشد لغة إنجليزية 🇬🇧
+3️⃣ مرشد متعدد اللغات 🌍
+0️⃣ رجوع ⬅️
+
+*أرسل رقم الخيار*`;
+            }
+            else if (userInput === '5') {
+                replyMessage = `مرحبًا بك في خدمة العملاء 🤝🔥
+
+1️⃣ استفسار عن حجز موجود 📋
+2️⃣ تعديل حجز 🔄
+3️⃣ إلغاء حجز ❌
+4️⃣ شكوى أو اقتراح 💬
+0️⃣ رجوع ⬅️
+
+*أرسل رقم الخيار*`;
+            }
+            else if (userInput === '0') {
+                replyMessage = `مرحبًا بك في *المسار الساخن للسفر والسياحة* 🔥🌍
+
+يشرفنا نخدمك! اختر الخدمة المطلوبة:
+
+1️⃣ حجز وحدات الضيافة 🏘️
+2️⃣ حجز سيارات 🚗
+3️⃣ البرامج والخدمات السياحية 🗺️
+4️⃣ المرشدين السياحيين 👨‍🏫
+5️⃣ خدمة العملاء 💬
+
+*أرسل رقم الخيار المطلوب*`;
+            }
+            else {
+                // Unknown input - send to human agent
+                replyMessage = `✅ تم استلام رسالتك!
+
+📋 سيتواصل معك موظفنا المختص قريباً.
+⏱️ وقت الاستجابة: 5-10 دقائق
+
+شكراً لتواصلك مع *المسار الساخن للسفر والسياحة* 🔥`;
+            }
+        }
+        
+        // Send auto-reply if available
+        if (replyMessage) {
+            try {
+                await client.sendMessage(msg.from, replyMessage);
+                
+                // Store bot reply
+                const botReply = {
+                    id: `bot_${Date.now()}`,
+                    text: replyMessage,
+                    sender: 'bot',
+                    timestamp: new Date(),
+                    status: 'sent',
+                    type: 'chat'
+                };
+                messages.get(conversationId).push(botReply);
+                
+                if (db) {
+                    await saveMessagesToFirebase(conversationId, [botReply]);
+                }
+                
+                console.log(`✅ Auto-reply sent to ${phoneNumber}`);
+                
+                // Notify all connected clients about new message
+                io.emit('new_message', {
+                    conversationId,
+                    message: botReply
+                });
+                
+            } catch (replyError) {
+                console.error('❌ Error sending auto-reply:', replyError.message);
+            }
+        }
+        
+        // Notify all connected clients about new message
+        io.emit('new_message', {
+            conversationId,
+            message: newMessage
+        });
         
     } catch (error) {
         console.error('Error processing message:', error);
@@ -463,9 +626,10 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', async () => {
+server.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 WhatsApp Server running on port ${PORT}`);
     console.log(`🌐 Server URL: http://0.0.0.0:${PORT}`);
+    console.log(`🔌 WebSocket enabled for real-time updates`);
     console.log(`📱 Waiting for QR Code scan...`);
     console.log(`✅ Health check: http://0.0.0.0:${PORT}/health`);
     
