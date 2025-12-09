@@ -420,11 +420,10 @@ export default function Home() {
           {/* New Chat Button */}
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-xl transition-all shadow-lg hover:shadow-blue-500/50"
+            className="p-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl transition-all shadow-lg hover:shadow-blue-500/50"
             title="محادثة جديدة"
           >
             <Plus className="w-5 h-5" />
-            <span className="text-sm font-semibold">محادثة جديدة</span>
           </button>
 
           {/* User Info */}

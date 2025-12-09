@@ -54,7 +54,7 @@ const ConversationsSidebar = ({
   });
 
   return (
-    <div className="w-[420px] h-screen bg-gradient-to-br from-dark-100/95 to-dark-200/95 backdrop-blur-xl border-l border-blue-500/20 flex flex-col">
+    <div className="w-[420px] h-screen bg-gradient-to-br from-dark-100/95 to-dark-200/95 backdrop-blur-xl border-l border-blue-500/20 flex flex-col sticky top-0">
       {/* Header */}
       <div className="p-6 border-b border-blue-500/20">
         <div className="flex items-center justify-between mb-4">

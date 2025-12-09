@@ -249,50 +249,51 @@ const ChatArea = ({
             </div>
           </div>
 
-          <div className="flex gap-1 md:gap-2 flex-wrap">
+          <div className="flex gap-2">
             <button
               onClick={() => setShowAssignModal(true)}
-              className="p-2 md:p-3 hover:bg-green-500/10 rounded-lg transition-all group relative"
+              className="p-3 hover:bg-green-500/10 rounded-lg transition-all group relative"
               title="إسناد لموظف"
             >
-              <UserPlus className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
+              <UserPlus className="w-5 h-5 text-green-400" />
               {conversation.assignedToName && (
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></span>
               )}
             </button>
             <button
               onClick={conversation.isScreenSharing ? handleStopScreenShare : handleStartScreenShare}
-              className={`p-2 md:p-3 rounded-lg transition-all ${
+              className={`p-3 rounded-lg transition-all ${
                 conversation.isScreenSharing
                   ? 'bg-purple-500/20 text-purple-400'
                   : 'hover:bg-purple-500/10 text-gray-400'
               }`}
               title={conversation.isScreenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة الشاشة'}
             >
-              <Monitor className="w-4 h-4 md:w-5 md:h-5" />
+              <Monitor className="w-5 h-5" />
             </button>
             <button
               onClick={() => toast('يتم التحكم في البوت من الإعدادات ⚙️', { icon: 'ℹ️' })}
-              className={`p-2 md:p-3 rounded-lg transition-all ${
+              className={`p-3 rounded-lg transition-all ${
                 botEnabled
                   ? 'bg-blue-500/20 text-blue-400'
                   : 'hover:bg-blue-500/10 text-gray-400'
               }`}
               title={botEnabled ? 'تعطيل البوت' : 'تفعيل البوت'}
             >
-              <Bot className="w-4 h-4 md:w-5 md:h-5" />
+              <Bot className="w-5 h-5" />
             </button>
-            <button className="p-2 md:p-3 hover:bg-blue-500/10 rounded-lg transition-all">
-              <Phone className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+            <button className="p-3 hover:bg-blue-500/10 rounded-lg transition-all" title="مكالمة صوتية">
+              <Phone className="w-5 h-5 text-blue-400" />
             </button>
-            <button className="p-2 md:p-3 hover:bg-blue-500/10 rounded-lg transition-all">
-              <Video className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+            <button className="p-3 hover:bg-blue-500/10 rounded-lg transition-all" title="مكالمة فيديو">
+              <Video className="w-5 h-5 text-blue-400" />
             </button>
             <button
               onClick={onOpenContactInfo}
-              className="p-2 md:p-3 hover:bg-blue-500/10 rounded-lg transition-all"
+              className="p-3 hover:bg-blue-500/10 rounded-lg transition-all"
+              title="معلومات المستخدم"
             >
-              <Info className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+              <Info className="w-5 h-5 text-blue-400" />
             </button>
           </div>
         </div>
@@ -487,105 +488,7 @@ const ChatArea = ({
         </div>
       </div>
 
-      {/* Floating Action Buttons - Bottom Right */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="fixed bottom-24 right-6 flex flex-col gap-3 z-50"
-      >
-        {/* User Info Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onOpenContactInfo}
-          className="p-4 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full shadow-lg hover:shadow-xl transition-all group relative"
-          title="معلومات المستخدم"
-        >
-          <Info className="w-6 h-6 text-white" />
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-dark-200 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            معلومات المستخدم
-          </span>
-        </motion.button>
 
-        {/* Assignment Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowAssignModal(true)}
-          className="p-4 bg-gradient-to-br from-green-600 to-emerald-600 rounded-full shadow-lg hover:shadow-xl transition-all group relative"
-          title="إسناد لموظف"
-        >
-          <UserPlus className="w-6 h-6 text-white" />
-          {conversation.assignedToName && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-dark-100"></span>
-          )}
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-dark-200 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            إسناد لموظف
-          </span>
-        </motion.button>
-
-        {/* Bot Toggle Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => toast('يتم التحكم في البوت من الإعدادات ⚙️', { icon: 'ℹ️' })}
-          className={`p-4 rounded-full shadow-lg hover:shadow-xl transition-all group relative ${
-            botEnabled
-              ? 'bg-gradient-to-br from-blue-600 to-indigo-600'
-              : 'bg-gradient-to-br from-gray-600 to-gray-700'
-          }`}
-          title={botEnabled ? 'البوت مفعّل' : 'البوت معطّل'}
-        >
-          <Bot className="w-6 h-6 text-white" />
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-dark-200 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            {botEnabled ? 'إيقاف البوت' : 'تفعيل البوت'}
-          </span>
-        </motion.button>
-
-        {/* Screen Share Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={conversation.isScreenSharing ? handleStopScreenShare : handleStartScreenShare}
-          className={`p-4 rounded-full shadow-lg hover:shadow-xl transition-all group relative ${
-            conversation.isScreenSharing
-              ? 'bg-gradient-to-br from-purple-600 to-pink-600'
-              : 'bg-gradient-to-br from-gray-600 to-gray-700'
-          }`}
-          title={conversation.isScreenSharing ? 'إيقاف المشاركة' : 'مشاركة الشاشة'}
-        >
-          <Monitor className="w-6 h-6 text-white" />
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-dark-200 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            {conversation.isScreenSharing ? 'إيقاف المشاركة' : 'مشاركة الشاشة'}
-          </span>
-        </motion.button>
-
-        {/* Call Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          className="p-4 bg-gradient-to-br from-green-600 to-teal-600 rounded-full shadow-lg hover:shadow-xl transition-all group relative"
-          title="مكالمة صوتية"
-        >
-          <Phone className="w-6 h-6 text-white" />
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-dark-200 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            مكالمة صوتية
-          </span>
-        </motion.button>
-
-        {/* Video Call Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          className="p-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all group relative"
-          title="مكالمة فيديو"
-        >
-          <Video className="w-6 h-6 text-white" />
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-dark-200 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            مكالمة فيديو
-          </span>
-        </motion.button>
-      </motion.div>
     </div>
   );
 };

@@ -15,7 +15,7 @@ const ContactInfoPanel = ({ conversation, onClose }: ContactInfoPanelProps) => {
       initial={{ x: -300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -300, opacity: 0 }}
-      className="w-[350px] h-screen bg-gradient-to-br from-dark-100/95 to-dark-200/95 backdrop-blur-xl border-l border-blue-500/20 flex flex-col"
+      className="w-[350px] h-screen bg-gradient-to-br from-dark-100/95 to-dark-200/95 backdrop-blur-xl border-l border-blue-500/20 flex flex-col sticky top-0"
     >
       {/* Header */}
       <div className="p-6 border-b border-blue-500/20">
