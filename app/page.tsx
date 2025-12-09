@@ -114,12 +114,16 @@ export default function Home() {
 
     const fetchMessages = async () => {
       try {
+        console.log(`🔄 Fetching messages for: ${selectedConversation.id}`);
         const response = await fetch(`/api/whatsapp/messages/${encodeURIComponent(selectedConversation.id)}`);
         if (response.ok) {
           const data = await response.json();
+          console.log(`📥 Received ${data.length} messages`, data);
           if (Array.isArray(data)) {
             setMessages(prev => ({ ...prev, [selectedConversation.id]: data }));
           }
+        } else {
+          console.error(`❌ Failed to fetch messages: ${response.status}`);
         }
       } catch (error) {
         console.error('Error fetching messages:', error);

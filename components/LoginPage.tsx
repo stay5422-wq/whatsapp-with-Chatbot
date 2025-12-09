@@ -52,8 +52,9 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         }];
       }
 
+      // Support both email and username (for backwards compatibility)
       const user = users.find(
-        (u) => u.email === email && u.password === password
+        (u) => (u.email === email || u.email === `${email}@whatsapp.com`) && u.password === password
       );
 
       if (user) {

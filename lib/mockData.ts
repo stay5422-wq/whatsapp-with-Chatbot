@@ -4,7 +4,7 @@ import { Conversation, Message, QuickReply, User } from '@/types';
 export const mockUsers: User[] = [
   {
     id: '1',
-    email: 'akram@whatsapp.com',
+    email: 'akram@whatsapp.com', // Can login with 'akram' or 'akram@whatsapp.com'
     password: 'akram2026',
     name: 'Eng. Akram Elmasry',
     role: 'admin',
