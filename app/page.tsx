@@ -547,64 +547,19 @@ export default function Home() {
           onToggleBot={setBotEnabled}
         />
 
-        {/* User Info & Actions - Bottom Left */}
-        <div className="fixed bottom-4 left-4 z-50 flex flex-col gap-3">
-          {/* New Chat Button */}
+        {/* New Chat Button - Bottom Left */}
+        <div className="fixed bottom-4 left-4 z-50">
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="p-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl transition-all shadow-lg hover:shadow-blue-500/50 hover:scale-110"
+            className="p-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-full transition-all shadow-2xl hover:shadow-blue-500/50 hover:scale-110"
             title="محادثة جديدة"
           >
             <Plus className="w-6 h-6" />
           </button>
+        </div>
 
-          {/* User Info Card */}
-          <div className="bg-dark-100/95 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-3 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full blur-sm opacity-50"></div>
-                <img
-                  src="/images/logo.jpg"
-                  alt="User Avatar"
-                  className="relative w-10 h-10 rounded-full object-cover border-2 border-blue-500/50"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    if (e.currentTarget.nextElementSibling) {
-                      (e.currentTarget.nextElementSibling as HTMLElement).classList.remove('hidden');
-                    }
-                  }}
-                />
-                <div className="hidden relative w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold text-sm border-2 border-blue-500/50">
-                  {currentUser.name.charAt(0)}
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-bold text-white">{currentUser.name}</p>
-                <p className="text-xs text-gray-400">
-                  {currentUser.role === 'admin' ? 'مدير النظام' : currentUser.department ? `قسم ${getDepartmentName(currentUser.department)}` : 'موظف'}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-3 pt-3 border-t border-blue-500/20">
-              {currentUser.role === 'admin' && (
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="flex-1 p-2 hover:bg-blue-500/20 rounded-lg transition-all group"
-                  title="الإعدادات"
-                >
-                  <Settings className="w-5 h-5 text-gray-400 group-hover:text-blue-400 mx-auto" />
-                </button>
-              )}
-              <button
-                onClick={handleLogout}
-                className="flex-1 p-2 hover:bg-red-500/20 rounded-lg transition-all group"
-                title="تسجيل الخروج"
-              >
-                <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-400 mx-auto" />
-              </button>
-            </div>
-          </div>
-
+        {/* Developer Credit - Bottom Left (above new chat button) */}
+        <div className="fixed bottom-24 left-4 z-50">
           {/* Developer Credit */}
           <div className="bg-dark-200/80 backdrop-blur-xl border border-blue-500/20 rounded-xl px-3 py-2 shadow-lg">
             <div className="flex items-center gap-2">

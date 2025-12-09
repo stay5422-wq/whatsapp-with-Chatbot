@@ -259,17 +259,28 @@ async function loadExistingChats() {
                 // Try different methods to get messages
                 let chatMessages = [];
                 try {
+                    console.log(`🔎 Fetching messages for chat: ${chatId}`);
                     chatMessages = await client.getMessages(chatId, { count: 30 });
+                    console.log(`✅ Got ${chatMessages.length} messages using getMessages`);
                 } catch (e) {
+                    console.log(`⚠️ getMessages failed: ${e.message}, trying alternative methods...`);
                     try {
                         chatMessages = await client.loadAndGetAllMessagesInChat(chatId, false, false);
+                        console.log(`✅ Got ${chatMessages.length} messages using loadAndGetAllMessagesInChat`);
                     } catch (e2) {
-                        chatMessages = await client.getAllMessagesInChat(chatId, false, false);
+                        console.log(`⚠️ loadAndGetAllMessagesInChat failed: ${e2.message}, trying getAllMessagesInChat...`);
+                        try {
+                            chatMessages = await client.getAllMessagesInChat(chatId, false, false);
+                            console.log(`✅ Got ${chatMessages.length} messages using getAllMessagesInChat`);
+                        } catch (e3) {
+                            console.log(`❌ All message fetching methods failed for ${chatId}`);
+                        }
                     }
                 }
                 
                 // Get last 30 messages only
                 const recentMessages = chatMessages.slice(-30);
+                console.log(`📥 Processing ${recentMessages.length} recent messages for ${chatId}`);
                 
                 // Create conversation even if no messages
                 const conversationId = chat.id._serialized || chat.id;
