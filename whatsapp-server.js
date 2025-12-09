@@ -111,9 +111,9 @@ async function initializeClient() {
     
     client = await wppconnect.create({
         session: 'whatsapp-session',
-        headless: true,
+        headless: 'new',
         devtools: false,
-        useChrome: false,
+        useChrome: true,
         debug: false,
         logQR: true,
         browserArgs: [
@@ -125,10 +125,6 @@ async function initializeClient() {
             '--no-zygote',
             '--disable-gpu'
         ],
-        puppeteerOptions: {
-            executablePath: '/usr/bin/chromium',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        },
         catchQR: (base64Qr, asciiQR) => {
             console.log('📱 QR Code received!');
             currentQR = base64Qr;
@@ -149,120 +145,107 @@ async function initializeClient() {
         }
     });
 
-    // Load existing chats after ready
-    if (isReady) {
-        await loadExistingChats();
-    }
-    
-    // Listen for messages
-    client.onMessage(async (message) => {
-        await handleIncomingMessage(message);
+    // Ready event handler
+    client.on('ready', async () => {
+        console.log('✅ WhatsApp is ready!');
+        isReady = true;
+        isConnecting = false;
+        currentQR = null;
+        
+        // Load existing chats
+        try {
+            console.log('📥 Loading existing chats...');
+            const chats = await client.getChats();
+            console.log(`📊 Found ${chats.length} chats`);
+            
+            for (const chat of chats) {
+                try {
+                    // Get last 20 messages from each chat
+                    const chatMessages = await chat.fetchMessages({ limit: 20 });
+                    
+                    if (chatMessages.length > 0) {
+                        const contact = await chat.getContact();
+                        const conversationId = chat.id._serialized;
+                        const phoneNumber = contact.number || chat.id.user;
+                        
+                        // Create conversation
+                        const lastMsg = chatMessages[chatMessages.length - 1];
+                        conversations.set(conversationId, {
+                            id: conversationId,
+                            name: chat.name || contact.pushname || contact.name || phoneNumber,
+                            phone: phoneNumber,
+                            avatar: await contact.getProfilePicUrl().catch(() => null),
+                            lastMessage: lastMsg.body || 'رسالة وسائط',
+                            timestamp: new Date(lastMsg.timestamp * 1000),
+                            unreadCount: chat.unreadCount || 0,
+                            status: 'active'
+                        });
+                        
+                        // Store messages
+                        const msgList = [];
+                        for (const msg of chatMessages) {
+                            msgList.push({
+                                id: msg.id._serialized,
+                                text: msg.body || '',
+                                sender: msg.fromMe ? 'agent' : 'user',
+                                timestamp: new Date(msg.timestamp * 1000),
+                                status: msg.ack >= 3 ? 'read' : msg.ack >= 2 ? 'delivered' : 'sent',
+                                type: msg.type
+                            });
+                        }
+                        messages.set(conversationId, msgList);
+                        
+                        // Save to Firebase
+                        if (db) {
+                            await saveConversationToFirebase(conversationId, conversations.get(conversationId));
+                            await saveMessagesToFirebase(conversationId, msgList);
+                        }
+                    }
+                } catch (chatError) {
+                    console.error('Error loading chat:', chatError.message);
+                }
+            }
+            
+            console.log(`✅ Loaded ${conversations.size} conversations with messages`);
+            
+            // Also try to load from Firebase
+            if (db && conversations.size === 0) {
+                console.log('📥 Trying to load from Firebase...');
+                await loadConversationsFromFirebase();
+            }
+        } catch (error) {
+            console.error('Error loading chats:', error);
+        }
     });
     
-    return client;
-}
+    // Authentication
+    client.on('authenticated', () => {
+        console.log('🔐 WhatsApp authenticated!');
+        isConnecting = true;
+    });
 
-// Load existing chats
-async function loadExistingChats() {
-    console.log('✅ WhatsApp is ready!');
-    isReady = true;
-    isConnecting = false;
-    currentQR = null;
-    
-    // Load existing chats
-    try {
-        console.log('📥 Loading existing chats...');
-        const chats = await client.getChats();
-        console.log(`📊 Found ${chats.length} chats`);
-        
-        for (const chat of chats) {
-            try {
-                // Get last 20 messages from each chat
-                const chatMessages = await chat.fetchMessages({ limit: 20 });
-                
-                if (chatMessages.length > 0) {
-                    const contact = await chat.getContact();
-                    const conversationId = chat.id._serialized;
-                    const phoneNumber = contact.number || chat.id.user;
-                    
-                    // Create conversation
-                    const lastMsg = chatMessages[chatMessages.length - 1];
-                    conversations.set(conversationId, {
-                        id: conversationId,
-                        name: chat.name || contact.pushname || contact.name || phoneNumber,
-                        phone: phoneNumber,
-                        avatar: await contact.getProfilePicUrl().catch(() => null),
-                        lastMessage: lastMsg.body || 'رسالة وسائط',
-                        timestamp: new Date(lastMsg.timestamp * 1000),
-                        unreadCount: chat.unreadCount || 0,
-                        status: 'active'
-                    });
-                    
-                    // Store messages
-                    const msgList = [];
-                    for (const msg of chatMessages) {
-                        msgList.push({
-                            id: msg.id._serialized,
-                            text: msg.body || '',
-                            sender: msg.fromMe ? 'agent' : 'user',
-                            timestamp: new Date(msg.timestamp * 1000),
-                            status: msg.ack >= 3 ? 'read' : msg.ack >= 2 ? 'delivered' : 'sent',
-                            type: msg.type
-                        });
-                    }
-                    messages.set(conversationId, msgList);
-                    
-                    // Save to Firebase
-                    if (db) {
-                        await saveConversationToFirebase(conversationId, conversations.get(conversationId));
-                        await saveMessagesToFirebase(conversationId, msgList);
-                    }
-                }
-            } catch (chatError) {
-                console.error('Error loading chat:', chatError.message);
-            }
-        }
-        
-        console.log(`✅ Loaded ${conversations.size} conversations with messages`);
-        
-        // Also try to load from Firebase
-        if (db && conversations.size === 0) {
-            console.log('📥 Trying to load from Firebase...');
-            await loadConversationsFromFirebase();
-        }
-    } catch (error) {
-        console.error('Error loading chats:', error);
-    }
-});
+    // Authentication failure
+    client.on('auth_failure', (msg) => {
+        console.error('❌ Authentication failed:', msg);
+        isReady = false;
+        isConnecting = false;
+    });
 
-// Authentication
-client.on('authenticated', () => {
-    console.log('🔐 WhatsApp authenticated!');
-    isConnecting = true;
-});
+    // Disconnected
+    client.on('disconnected', (reason) => {
+        console.log('📴 WhatsApp disconnected:', reason);
+        isReady = false;
+        isConnecting = false;
+        currentQR = null;
+    });
 
-// Authentication failure
-client.on('auth_failure', (msg) => {
-    console.error('❌ Authentication failed:', msg);
-    isReady = false;
-    isConnecting = false;
-});
+    // Loading screen
+    client.on('loading_screen', (percent, message) => {
+        console.log(`⏳ Loading: ${percent}% - ${message}`);
+    });
 
-// Disconnected
-client.on('disconnected', (reason) => {
-    console.log('📴 WhatsApp disconnected:', reason);
-    isReady = false;
-    isConnecting = false;
-    currentQR = null;
-});
-
-// Loading screen
-client.on('loading_screen', (percent, message) => {
-    console.log(`⏳ Loading: ${percent}% - ${message}`);
-});
-
-// Receive Messages
-client.on('message', async (msg) => {
+    // Receive Messages
+    client.on('message', async (msg) => {
     try {
         console.log(`📨 New message received from: ${msg.from}`);
         const contact = await msg.getContact();
@@ -319,10 +302,10 @@ client.on('message', async (msg) => {
     } catch (error) {
         console.error('Error processing message:', error);
     }
-});
-
-// Initialize client
-client.initialize();
+    });
+    
+    return client;
+}
 
 // API Endpoints
 
@@ -479,9 +462,12 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 WhatsApp Server running on port ${PORT}`);
     console.log(`🌐 Server URL: http://0.0.0.0:${PORT}`);
     console.log(`📱 Waiting for QR Code scan...`);
     console.log(`✅ Health check: http://0.0.0.0:${PORT}/health`);
+    
+    // Initialize WhatsApp client
+    await initializeClient();
 });

@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
       throw fetchError;
     }
     
-  } catch (error) {
-    console.error('Send message error:', error);
+  } catch (error: any) {
+    console.error('❌ Send message error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'فشل إرسال الرسالة' },
       { status: 500 }
     );
   }
