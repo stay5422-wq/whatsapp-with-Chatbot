@@ -249,50 +249,50 @@ const ChatArea = ({
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-1 md:gap-2 flex-wrap">
             <button
               onClick={() => setShowAssignModal(true)}
-              className="p-3 hover:bg-green-500/10 rounded-lg transition-all group relative"
+              className="p-2 md:p-3 hover:bg-green-500/10 rounded-lg transition-all group relative"
               title="إسناد لموظف"
             >
-              <UserPlus className="w-5 h-5 text-green-400" />
+              <UserPlus className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
               {conversation.assignedToName && (
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></span>
               )}
             </button>
             <button
               onClick={conversation.isScreenSharing ? handleStopScreenShare : handleStartScreenShare}
-              className={`p-3 rounded-lg transition-all ${
+              className={`p-2 md:p-3 rounded-lg transition-all ${
                 conversation.isScreenSharing
                   ? 'bg-purple-500/20 text-purple-400'
                   : 'hover:bg-purple-500/10 text-gray-400'
               }`}
               title={conversation.isScreenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة الشاشة'}
             >
-              <Monitor className="w-5 h-5" />
+              <Monitor className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={() => toast('يتم التحكم في البوت من الإعدادات ⚙️', { icon: 'ℹ️' })}
-              className={`p-3 rounded-lg transition-all ${
+              className={`p-2 md:p-3 rounded-lg transition-all ${
                 botEnabled
                   ? 'bg-blue-500/20 text-blue-400'
                   : 'hover:bg-blue-500/10 text-gray-400'
               }`}
               title={botEnabled ? 'تعطيل البوت' : 'تفعيل البوت'}
             >
-              <Bot className="w-5 h-5" />
+              <Bot className="w-4 h-4 md:w-5 md:h-5" />
             </button>
-            <button className="p-3 hover:bg-blue-500/10 rounded-lg transition-all">
-              <Phone className="w-5 h-5 text-blue-400" />
+            <button className="p-2 md:p-3 hover:bg-blue-500/10 rounded-lg transition-all">
+              <Phone className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
             </button>
-            <button className="p-3 hover:bg-blue-500/10 rounded-lg transition-all">
-              <Video className="w-5 h-5 text-blue-400" />
+            <button className="p-2 md:p-3 hover:bg-blue-500/10 rounded-lg transition-all">
+              <Video className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
             </button>
             <button
               onClick={onOpenContactInfo}
-              className="p-3 hover:bg-blue-500/10 rounded-lg transition-all"
+              className="p-2 md:p-3 hover:bg-blue-500/10 rounded-lg transition-all"
             >
-              <Info className="w-5 h-5 text-blue-400" />
+              <Info className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
             </button>
           </div>
         </div>
