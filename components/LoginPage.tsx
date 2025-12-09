@@ -42,14 +42,25 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       
       // Add default admin if no users
       if (users.length === 0) {
-        users = [{
-          id: 'admin',
-          email: 'akram@gmail.com',
-          password: 'Aazxc',
-          name: 'المسؤول',
-          avatar: '👤',
-          role: 'admin'
-        }];
+        users = [
+          {
+            id: 'admin',
+            email: 'akram@gmail.com',
+            password: 'Aazxc',
+            name: 'Eng. Akram Elmasry',
+            avatar: '👤',
+            role: 'admin'
+          },
+          // Backwards compatibility
+          {
+            id: 'admin2',
+            email: 'admin@whatsapp.com',
+            password: 'admin123',
+            name: 'المسؤول',
+            avatar: '👤',
+            role: 'admin'
+          }
+        ];
       }
 
       // Support both email and username (for backwards compatibility)

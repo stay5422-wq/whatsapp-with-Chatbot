@@ -32,14 +32,24 @@ export default function Home() {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [users, setUsers] = useState<User[]>([{
-    id: 'admin',
-    email: 'akram@gmail.com',
-    password: 'Aazxc',
-    name: 'المسؤول',
-    avatar: '👤',
-    role: 'admin'
-  }]);
+  const [users, setUsers] = useState<User[]>([
+    {
+      id: 'admin',
+      email: 'akram@gmail.com',
+      password: 'Aazxc',
+      name: 'Eng. Akram Elmasry',
+      avatar: '👤',
+      role: 'admin'
+    },
+    {
+      id: 'admin2',
+      email: 'admin@whatsapp.com',
+      password: 'admin123',
+      name: 'المسؤول',
+      avatar: '👤',
+      role: 'admin'
+    }
+  ]);
   const [botEnabled, setBotEnabled] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -444,6 +454,9 @@ export default function Home() {
           onSearchChange={setSearchQuery}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenSettings={() => setShowSettings(true)}
         />
 
         {/* Chat Area */}
