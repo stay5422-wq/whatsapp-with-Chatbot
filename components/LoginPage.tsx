@@ -65,18 +65,23 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
       // Support username OR email login (flexible)
       const user = users.find((u) => {
-        // Check if input matches email directly
-        if (u.email === email && u.password === password) return true;
+        // Password must match
+        if (u.password !== password) return false;
         
-        // Check if it's a username (without @) - convert to email
-        if (!email.includes('@')) {
-          const emailFromUsername = `${email}@whatsapp.com`;
-          return u.email === emailFromUsername && u.password === password;
-        }
+        // Check if input matches email directly
+        if (u.email === email) return true;
         
         // Check username part of email (before @)
         const emailUsername = u.email?.split('@')[0];
-        return emailUsername === email && u.password === password;
+        if (emailUsername === email) return true;
+        
+        // Check if it's username without @ - try common domains
+        if (!email.includes('@')) {
+          return u.email === `${email}@gmail.com` || 
+                 u.email === `${email}@whatsapp.com`;
+        }
+        
+        return false;
       });
 
       if (user) {
