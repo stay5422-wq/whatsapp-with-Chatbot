@@ -642,14 +642,24 @@ app.get('/api/messages/:conversationId', async (req, res) => {
                 // Try different methods to get messages
                 let chat = null;
                 try {
+                    console.log(`🔎 Trying getMessages for ${conversationId}...`);
                     chat = await client.getMessages(conversationId, { count: 50 });
+                    console.log(`✅ getMessages returned ${chat?.length || 0} messages`);
                 } catch (e) {
-                    console.log('getMessages failed, trying loadAndGetAllMessagesInChat...');
+                    console.log(`❌ getMessages failed: ${e.message}`);
                     try {
+                        console.log(`🔎 Trying loadAndGetAllMessagesInChat...`);
                         chat = await client.loadAndGetAllMessagesInChat(conversationId, true, false);
+                        console.log(`✅ loadAndGetAllMessagesInChat returned ${chat?.length || 0} messages`);
                     } catch (e2) {
-                        console.log('loadAndGetAllMessagesInChat failed, trying getAllMessagesInChat...');
-                        chat = await client.getAllMessagesInChat(conversationId, true, false);
+                        console.log(`❌ loadAndGetAllMessagesInChat failed: ${e2.message}`);
+                        try {
+                            console.log(`🔎 Trying getAllMessagesInChat...`);
+                            chat = await client.getAllMessagesInChat(conversationId, true, false);
+                            console.log(`✅ getAllMessagesInChat returned ${chat?.length || 0} messages`);
+                        } catch (e3) {
+                            console.log(`❌ getAllMessagesInChat failed: ${e3.message}`);
+                        }
                     }
                 }
                 

@@ -52,7 +52,19 @@ export default function Home() {
     console.log('🔍 Checking saved user:', savedUser);
     if (savedUser) {
       try {
-        const parsedUser = JSON.parse(savedUser);
+        let parsedUser = JSON.parse(savedUser);
+        
+        // Migration: Convert old username format to email format
+        if (parsedUser.username && !parsedUser.email) {
+          console.log('🔄 Migrating old user format from username to email');
+          parsedUser = {
+            ...parsedUser,
+            email: parsedUser.username.includes('@') ? parsedUser.username : `${parsedUser.username}@whatsapp.com`,
+          };
+          delete parsedUser.username;
+          localStorage.setItem('whatsapp_currentUser', JSON.stringify(parsedUser));
+        }
+        
         console.log('✅ Loaded user from localStorage:', parsedUser);
         setCurrentUser(parsedUser);
       } catch (e) {
