@@ -627,9 +627,12 @@ app.get('/api/messages/:conversationId', async (req, res) => {
     try {
         const { conversationId } = req.params;
         console.log(`📥 Fetching messages for: ${conversationId}`);
+        console.log(`📋 Available conversation IDs:`, Array.from(conversations.keys()));
+        console.log(`💬 Cached message keys:`, Array.from(messages.keys()));
         
         // Try to get messages from cache first
         let msgs = messages.get(conversationId) || [];
+        console.log(`📦 Found ${msgs.length} messages in cache`);
         
         // If no messages in cache and client is ready, fetch from WhatsApp
         if (msgs.length === 0 && isReady && client) {

@@ -244,8 +244,8 @@ const ChatArea = ({
               )}
             </div>
             <div>
-              <h2 className="font-bold text-white">{conversation.contactName}</h2>
-              <p className="text-sm text-gray-400">{conversation.phoneNumber}</p>
+              <h2 className="font-bold text-white">{conversation.name || conversation.contactName || conversation.phone}</h2>
+              <p className="text-sm text-gray-400">{conversation.phone || conversation.phoneNumber || 'رقم غير معروف'}</p>
             </div>
           </div>
 
