@@ -116,6 +116,7 @@ async function initializeClient() {
         useChrome: true,
         debug: false,
         logQR: true,
+        autoClose: 300000, // 5 minutes instead of 60 seconds
         browserArgs: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
