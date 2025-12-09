@@ -63,15 +63,26 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         ];
       }
 
-      // Support both email and username (for backwards compatibility)
-      const user = users.find(
-        (u) => (u.email === email || u.email === `${email}@whatsapp.com`) && u.password === password
-      );
+      // Support username OR email login (flexible)
+      const user = users.find((u) => {
+        // Check if input matches email directly
+        if (u.email === email && u.password === password) return true;
+        
+        // Check if it's a username (without @) - convert to email
+        if (!email.includes('@')) {
+          const emailFromUsername = `${email}@whatsapp.com`;
+          return u.email === emailFromUsername && u.password === password;
+        }
+        
+        // Check username part of email (before @)
+        const emailUsername = u.email?.split('@')[0];
+        return emailUsername === email && u.password === password;
+      });
 
       if (user) {
         onLogin(user);
       } else {
-        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        setError('اسم المستخدم أو كلمة المرور غير صحيحة');
       }
       setLoading(false);
     }, 1000);
@@ -234,7 +245,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             transition={{ delay: 0.9, duration: 0.5 }}
           >
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              البريد الإلكتروني
+              اسم المستخدم أو البريد الإلكتروني
             </label>
             <motion.div 
               className="relative"
@@ -242,10 +253,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             >
               <UserIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <motion.input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@whatsapp.com"
+                placeholder="akram أو akram@gmail.com"
                 required
                 whileFocus={{ 
                   borderColor: "rgb(34, 197, 94)",
