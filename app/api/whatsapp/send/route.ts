@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const WHATSAPP_SERVER_URL = process.env.WHATSAPP_SERVER_URL;
+const WHATSAPP_SERVER_URL = process.env.WHATSAPP_SERVER_URL || 'http://localhost:8080';
 
 // Send WhatsApp Message
 export async function POST(request: NextRequest) {
   try {
     const { to, message, type = 'text' } = await request.json();
     
-    if (!WHATSAPP_SERVER_URL) {
-      return NextResponse.json(
-        { error: 'WhatsApp server not configured' },
-        { status: 500 }
-      );
-    }
+    console.log('📤 Sending message to WhatsApp server:', {
+      to,
+      message: message.substring(0, 50),
+      serverUrl: WHATSAPP_SERVER_URL
+    });
     
     // Send message through WhatsApp Web server
     const controller = new AbortController();

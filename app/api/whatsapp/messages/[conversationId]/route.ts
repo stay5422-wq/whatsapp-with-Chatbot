@@ -5,15 +5,10 @@ export async function GET(
   { params }: { params: { conversationId: string } }
 ) {
   try {
-    const whatsappServerUrl = process.env.NEXT_PUBLIC_WHATSAPP_SERVER_URL || process.env.WHATSAPP_SERVER_URL;
-    
-    if (!whatsappServerUrl) {
-      console.error('WHATSAPP_SERVER_URL not configured');
-      return NextResponse.json([], { status: 200 });
-    }
+    const whatsappServerUrl = process.env.NEXT_PUBLIC_WHATSAPP_SERVER_URL || process.env.WHATSAPP_SERVER_URL || 'http://localhost:8080';
 
     const { conversationId } = params;
-    console.log('Fetching messages for conversation:', conversationId);
+    console.log('📥 Fetching messages for conversation:', conversationId, 'from:', whatsappServerUrl);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);

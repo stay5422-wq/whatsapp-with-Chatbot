@@ -2,14 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   try {
-    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL;
-    
-    if (!whatsappServerUrl) {
-      return NextResponse.json(
-        { error: 'WhatsApp server URL not configured', success: false },
-        { status: 400 }
-      );
-    }
+    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL || 'http://localhost:8080';
+    console.log('🔄 Restarting WhatsApp at:', whatsappServerUrl);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // Increased to 30s

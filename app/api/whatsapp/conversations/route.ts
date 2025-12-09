@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL;
+    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL || 'http://localhost:8080';
+    console.log('📞 Fetching conversations from:', whatsappServerUrl);
     
     if (!whatsappServerUrl) {
       return NextResponse.json([], { status: 200 });

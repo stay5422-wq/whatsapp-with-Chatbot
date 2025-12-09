@@ -2,17 +2,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Connect to WhatsApp server on Railway/Render
-    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL;
+    // Connect to WhatsApp server on Railway/Render or localhost
+    const whatsappServerUrl = process.env.WHATSAPP_SERVER_URL || 'http://localhost:8080';
     
-    // If no server URL configured, return mock response
-    if (!whatsappServerUrl) {
-      return NextResponse.json({
-        connected: false,
-        qr: null,
-        message: 'WhatsApp server URL not configured. Please set WHATSAPP_SERVER_URL environment variable.',
-      });
-    }
+    console.log('🔍 Checking WhatsApp status at:', whatsappServerUrl);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
