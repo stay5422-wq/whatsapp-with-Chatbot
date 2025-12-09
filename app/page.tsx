@@ -52,6 +52,7 @@ export default function Home() {
   ]);
   const [botEnabled, setBotEnabled] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [whatsappConnected, setWhatsappConnected] = useState(false);
 
   // Load data from localStorage after mount (client-side only)
   useEffect(() => {
@@ -111,6 +112,29 @@ export default function Home() {
     }
   }, []);
 
+  // Check WhatsApp connection status
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const checkConnection = async () => {
+      try {
+        const response = await fetch('/api/whatsapp/status');
+        if (response.ok) {
+          const data = await response.json();
+          setWhatsappConnected(data.connected || data.ready || false);
+        } else {
+          setWhatsappConnected(false);
+        }
+      } catch (error) {
+        setWhatsappConnected(false);
+      }
+    };
+
+    checkConnection();
+    const interval = setInterval(checkConnection, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   // Fetch conversations from WhatsApp server
   useEffect(() => {
     if (!currentUser) return;
@@ -135,6 +159,30 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [currentUser]);
 
+  // Load messages from localStorage on mount
+  useEffect(() => {
+    if (mounted) {
+      const savedMessages = localStorage.getItem('whatsapp_messages');
+      if (savedMessages) {
+        try {
+          const parsedMessages = JSON.parse(savedMessages);
+          console.log('💾 Loaded messages from localStorage:', Object.keys(parsedMessages).length, 'conversations');
+          setMessages(parsedMessages);
+        } catch (e) {
+          console.error('Error loading messages:', e);
+        }
+      }
+    }
+  }, [mounted]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (mounted && Object.keys(messages).length > 0) {
+      localStorage.setItem('whatsapp_messages', JSON.stringify(messages));
+      console.log('💾 Saved messages to localStorage');
+    }
+  }, [messages, mounted]);
+
   // Fetch messages when conversation is selected
   useEffect(() => {
     if (!selectedConversation) return;
@@ -145,21 +193,37 @@ export default function Home() {
         const response = await fetch(`/api/whatsapp/messages/${encodeURIComponent(selectedConversation.id)}`);
         if (response.ok) {
           const data = await response.json();
-          console.log(`📥 Received ${data.length} messages`, data);
-          if (Array.isArray(data)) {
-            setMessages(prev => ({ ...prev, [selectedConversation.id]: data }));
+          console.log(`📥 Received ${data.length} messages from API`, data);
+          if (Array.isArray(data) && data.length > 0) {
+            // Merge with local messages
+            setMessages(prev => {
+              const localMessages = prev[selectedConversation.id] || [];
+              const merged = [...data];
+              
+              // Add local messages that are not in API response
+              localMessages.forEach(localMsg => {
+                if (!data.find(apiMsg => apiMsg.id === localMsg.id)) {
+                  merged.push(localMsg);
+                }
+              });
+              
+              // Sort by timestamp
+              merged.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+              
+              return { ...prev, [selectedConversation.id]: merged };
+            });
           }
         } else {
-          console.error(`❌ Failed to fetch messages: ${response.status}`);
+          console.log(`⚠️ API returned ${response.status}, using local messages only`);
         }
       } catch (error) {
-        console.error('Error fetching messages:', error);
+        console.error('⚠️ Error fetching messages, using local messages:', error);
       }
     };
 
     fetchMessages();
-    // Fetch messages every 3 seconds
-    const interval = setInterval(fetchMessages, 3000);
+    // Fetch messages every 5 seconds (reduced frequency)
+    const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [selectedConversation]);
 
@@ -376,18 +440,21 @@ export default function Home() {
         } else {
           const errorData = await response.json().catch(() => ({}));
           console.error('❌ API error:', errorData);
+          
+          // Check if WhatsApp is not ready
+          if (response.status === 503 || errorData.error?.includes('not ready')) {
+            toast.error('⚠️ WhatsApp غير متصل - الرسالة محفوظة محلياً');
+          } else {
+            toast.error('فشل إرسال الرسالة - الرسالة ظاهرة محلياً فقط');
+          }
+          
           throw new Error(errorData.error || 'Failed to send message');
         }
       } catch (error) {
         console.error('❌ Error sending message:', error);
-        toast.error('فشل إرسال الرسالة - الرسالة ظاهرة محلياً فقط');
-        // Update message status to failed
-        setMessages((prev) => ({
-          ...prev,
-          [selectedConversation.id]: prev[selectedConversation.id].map((msg) =>
-            msg.id === newMessage.id ? { ...msg, status: 'failed' } : msg
-          ),
-        }));
+        
+        // Keep message as 'sent' status since it's saved locally
+        // It will be synced when WhatsApp becomes ready
       }
     } else if (sender === 'bot') {
       console.log('🤖 Bot message - showing in UI only');
@@ -457,6 +524,22 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="relative flex h-screen" dir="rtl">
+
+        {/* WhatsApp Connection Status */}
+        {currentUser && (
+          <div className="absolute top-4 left-4 z-50">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-xl border transition-all ${
+              whatsappConnected 
+                ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                : 'bg-red-500/10 border-red-500/30 text-red-400'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${whatsappConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+              <span className="text-sm font-medium">
+                {whatsappConnected ? 'WhatsApp متصل' : 'WhatsApp غير متصل'}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Conversations Sidebar */}
         <ConversationsSidebar
