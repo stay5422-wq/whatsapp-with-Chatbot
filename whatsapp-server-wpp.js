@@ -641,6 +641,10 @@ app.get('/api/messages/:conversationId', async (req, res) => {
         console.log(`📋 Available conversation IDs:`, Array.from(conversations.keys()));
         console.log(`💬 Cached message keys:`, Array.from(messages.keys()));
         
+        // Check if it's a group/channel (@lid) or individual (@c.us)
+        const isGroup = conversationId.includes('@lid') || conversationId.includes('@g.us');
+        console.log(`🔍 Chat type: ${isGroup ? 'GROUP/CHANNEL' : 'INDIVIDUAL'}`);
+        
         // Try to get messages from cache first
         let msgs = messages.get(conversationId) || [];
         console.log(`📦 Found ${msgs.length} messages in cache`);
@@ -670,6 +674,18 @@ app.get('/api/messages/:conversationId', async (req, res) => {
                             console.log(`✅ getAllMessagesInChat returned ${chat?.length || 0} messages`);
                         } catch (e3) {
                             console.log(`❌ getAllMessagesInChat failed: ${e3.message}`);
+                            
+                            // Last resort: try to get chat object directly
+                            try {
+                                console.log(`🔎 Last resort: trying getChatById...`);
+                                const chatObj = await client.getChatById(conversationId);
+                                if (chatObj && chatObj.messages) {
+                                    chat = chatObj.messages;
+                                    console.log(`✅ getChatById returned ${chat?.length || 0} messages`);
+                                }
+                            } catch (e4) {
+                                console.log(`❌ getChatById also failed: ${e4.message}`);
+                            }
                         }
                     }
                 }
