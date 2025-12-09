@@ -75,16 +75,19 @@ const ChatArea = ({
   // Initialize bot on conversation start
   useEffect(() => {
     if (bot && conversation && botEnabled) {
+      console.log('🤖 Initializing bot for conversation:', conversation.id);
       bot.initializeBot();
     }
   }, [conversation?.id, botEnabled]);
 
   const handleSend = () => {
     if (messageText.trim()) {
-      onSendMessage(messageText);
+      console.log('📨 User sending message:', messageText);
+      onSendMessage(messageText, 'agent');
       
       // If bot is enabled and waiting for input, handle it
       if (bot && botEnabled && bot.isWaitingForInput()) {
+        console.log('🤖 Bot processing user input...');
         bot.handleUserInput(messageText);
       }
       

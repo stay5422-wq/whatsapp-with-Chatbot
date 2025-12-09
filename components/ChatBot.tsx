@@ -19,6 +19,7 @@ const useChatBot = ({ conversation, onSendBotMessage, onUpdateConversation }: Ch
 
   // Send bot message
   const sendBotMessage = (text: string) => {
+    console.log('🤖 Bot sending message:', text);
     const botMessage: Message = {
       id: Date.now().toString(),
       text,
@@ -100,14 +101,18 @@ const useChatBot = ({ conversation, onSendBotMessage, onUpdateConversation }: Ch
 
   // Initialize bot for new conversations
   const initializeBot = () => {
+    console.log('🤖 Initializing bot, current question:', conversation.currentQuestionId);
     if (!conversation.currentQuestionId) {
       const welcomeQuestion = questionTree['welcome'];
       if (welcomeQuestion) {
+        console.log('🤖 Sending welcome message:', welcomeQuestion.text);
         onUpdateConversation({ currentQuestionId: 'welcome' });
         setTimeout(() => {
           sendBotMessage(welcomeQuestion.text);
         }, 1000);
       }
+    } else {
+      console.log('🤖 Bot already initialized');
     }
   };
 

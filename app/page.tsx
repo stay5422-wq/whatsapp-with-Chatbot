@@ -316,8 +316,10 @@ export default function Home() {
   }, []);
 
   // Handle sending message
-  const handleSendMessage = useCallback(async (text: string, sender: 'user' | 'agent' | 'bot' = 'user') => {
+  const handleSendMessage = useCallback(async (text: string, sender: 'user' | 'agent' | 'bot' = 'agent') => {
     if (!selectedConversation) return;
+
+    console.log('📤 Sending message:', { text, sender, conversationId: selectedConversation.id });
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -327,10 +329,15 @@ export default function Home() {
       status: 'sent',
     };
 
-    setMessages((prev) => ({
-      ...prev,
-      [selectedConversation.id]: [...(prev[selectedConversation.id] || []), newMessage],
-    }));
+    // Add message immediately to show in UI
+    setMessages((prev) => {
+      const updated = {
+        ...prev,
+        [selectedConversation.id]: [...(prev[selectedConversation.id] || []), newMessage],
+      };
+      console.log('✅ Messages updated in state:', updated[selectedConversation.id].length);
+      return updated;
+    });
 
     // Update last message in conversation
     setConversations((prev) =>
@@ -341,9 +348,10 @@ export default function Home() {
       )
     );
 
-    // Send message via WhatsApp API if it's from agent
+    // Send message via WhatsApp API if it's from agent (don't send bot messages via API)
     if (sender === 'agent' || sender === 'user') {
       try {
+        console.log('🌐 Sending to WhatsApp API...');
         const response = await fetch('/api/whatsapp/send', {
           method: 'POST',
           headers: {
@@ -356,6 +364,7 @@ export default function Home() {
         });
 
         if (response.ok) {
+          console.log('✅ Message sent successfully via API');
           toast.success('تم إرسال الرسالة');
           // Update message status to delivered
           setMessages((prev) => ({
@@ -365,11 +374,13 @@ export default function Home() {
             ),
           }));
         } else {
-          throw new Error('Failed to send message');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('❌ API error:', errorData);
+          throw new Error(errorData.error || 'Failed to send message');
         }
       } catch (error) {
-        console.error('Error sending message:', error);
-        toast.error('فشل إرسال الرسالة');
+        console.error('❌ Error sending message:', error);
+        toast.error('فشل إرسال الرسالة - الرسالة ظاهرة محلياً فقط');
         // Update message status to failed
         setMessages((prev) => ({
           ...prev,
@@ -378,6 +389,8 @@ export default function Home() {
           ),
         }));
       }
+    } else if (sender === 'bot') {
+      console.log('🤖 Bot message - showing in UI only');
     }
   }, [selectedConversation]);
 
