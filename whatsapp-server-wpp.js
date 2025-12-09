@@ -166,7 +166,7 @@ async function initializeClient() {
         logQR: false,
         disableWelcome: true,
         updatesLog: false,
-        autoClose: 300000, // 5 minutes
+        autoClose: 0, // Disable auto-close to keep connection alive
         browserArgs: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -361,13 +361,15 @@ async function handleIncomingMessage(message) {
         }
         
         const newMessage = {
-            id: message.id,
-            text: message.body || '',
+            id: message.id?._serialized || message.id || `msg_${Date.now()}`,
+            text: message.body || message.content || '',
             sender: 'user',
-            timestamp: new Date(message.timestamp * 1000),
+            timestamp: new Date((message.timestamp || message.t || Date.now() / 1000) * 1000),
             status: 'delivered',
-            type: message.type
+            type: message.type || 'chat'
         };
+        
+        console.log(`✅ Stored user message: ${newMessage.text.substring(0, 50)}...`);
         
         messages.get(conversationId).push(newMessage);
         
@@ -425,12 +427,20 @@ async function handleIncomingMessage(message) {
                 const botMessage = {
                     id: `bot_${Date.now()}`,
                     text: botReply,
-                    sender: 'agent',
+                    sender: 'bot',
                     timestamp: new Date(),
                     status: 'delivered',
                     type: 'chat'
                 };
                 messages.get(conversationId).push(botMessage);
+                console.log(`✅ Stored bot message: ${botReply.substring(0, 50)}...`);
+                
+                // Update conversation with bot reply
+                const conv = conversations.get(conversationId);
+                if (conv) {
+                    conv.lastMessage = botReply;
+                    conv.timestamp = new Date();
+                }
             } catch (err) {
                 console.error('Error sending bot reply:', err.message);
             }
