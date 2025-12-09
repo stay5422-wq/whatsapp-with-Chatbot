@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "whatsapp": "node whatsapp-server.js"
+    "whatsapp": "node whatsapp-server.js",
+    "whatsapp:cloud": "node whatsapp-server-cloud-api.js",
+    "whatsapp:wpp": "node whatsapp-server-wpp.js"
   },
   "dependencies": {
     "@wppconnect-team/wppconnect": "^1.37.8",
+    "axios": "^1.13.2",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "firebase": "^12.6.0",

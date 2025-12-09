@@ -1,1 +1,1 @@
-web: node whatsapp-server-wpp.js
+web: node whatsapp-server-cloud-api.js
