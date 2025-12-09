@@ -237,42 +237,64 @@ async function loadExistingChats() {
     try {
         console.log('📥 Loading existing chats...');
         
-        // Wait a bit for WhatsApp to sync
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait for WhatsApp to sync properly
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Increased wait time
         
-        const chats = await client.getAllChats();
-        console.log(`📊 Found ${chats.length} chats`);
+        // Use listChats instead of deprecated getAllChats
+        let chats = [];
+        try {
+            chats = await client.listChats();
+            console.log(`📊 Found ${chats.length} chats using listChats`);
+        } catch (e) {
+            console.log('⚠️ listChats failed, trying getAllChats...');
+            chats = await client.getAllChats();
+            console.log(`📊 Found ${chats.length} chats using getAllChats`);
+        }
         
         for (const chat of chats.slice(0, 50)) { // Load first 50 chats
             try {
-                const messages = await client.getAllMessagesInChat(chat.id._serialized, true, false);
+                const chatId = chat.id._serialized || chat.id;
+                console.log(`📂 Loading chat: ${chat.name || chatId}`);
+                
+                // Try different methods to get messages
+                let chatMessages = [];
+                try {
+                    chatMessages = await client.getMessages(chatId, { count: 30 });
+                } catch (e) {
+                    try {
+                        chatMessages = await client.loadAndGetAllMessagesInChat(chatId, false, false);
+                    } catch (e2) {
+                        chatMessages = await client.getAllMessagesInChat(chatId, false, false);
+                    }
+                }
                 
                 // Get last 30 messages only
-                const recentMessages = messages.slice(-30);
+                const recentMessages = chatMessages.slice(-30);
                 
+                // Create conversation even if no messages
+                const conversationId = chat.id._serialized || chat.id;
+                const lastMsg = recentMessages.length > 0 ? recentMessages[recentMessages.length - 1] : null;
+                
+                conversations.set(conversationId, {
+                    id: conversationId,
+                    name: chat.name || chat.contact?.pushname || chat.contact?.name || chat.id.user || 'Unknown',
+                    phone: chat.id.user || chat.id._serialized?.split('@')[0] || '',
+                    avatar: null,
+                    lastMessage: lastMsg ? (lastMsg.body || lastMsg.content || 'رسالة وسائط') : 'لا توجد رسائل',
+                    timestamp: lastMsg ? new Date((lastMsg.timestamp || lastMsg.t || Date.now() / 1000) * 1000) : new Date(),
+                    unreadCount: chat.unreadCount || 0,
+                    status: 'active'
+                });
+                
+                // Store messages if available
                 if (recentMessages.length > 0) {
-                    const conversationId = chat.id._serialized;
-                    const lastMsg = recentMessages[recentMessages.length - 1];
-                    
-                    conversations.set(conversationId, {
-                        id: conversationId,
-                        name: chat.name || chat.contact?.pushname || chat.id.user,
-                        phone: chat.id.user,
-                        avatar: null,
-                        lastMessage: lastMsg.body || 'رسالة وسائط',
-                        timestamp: new Date(lastMsg.timestamp * 1000),
-                        unreadCount: chat.unreadCount || 0,
-                        status: 'active'
-                    });
-                    
-                    // Store messages
                     const msgList = recentMessages.map(msg => ({
-                        id: msg.id._serialized || msg.id,
-                        text: msg.body || '',
+                        id: msg.id._serialized || msg.id || Date.now().toString(),
+                        text: msg.body || msg.content || '',
                         sender: msg.fromMe ? 'agent' : 'user',
-                        timestamp: new Date(msg.timestamp * 1000),
+                        timestamp: new Date((msg.timestamp || msg.t || Date.now() / 1000) * 1000),
                         status: 'delivered',
-                        type: msg.type
+                        type: msg.type || 'chat'
                     }));
                     
                     messages.set(conversationId, msgList);
