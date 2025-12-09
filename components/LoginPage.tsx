@@ -44,8 +44,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       if (users.length === 0) {
         users = [{
           id: 'admin',
-          email: 'admin@whatsapp.com',
-          password: 'admin123',
+          email: 'akram@gmail.com',
+          password: 'Aazxc',
           name: 'المسؤول',
           avatar: '👤',
           role: 'admin'

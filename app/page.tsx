@@ -34,8 +34,8 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [users, setUsers] = useState<User[]>([{
     id: 'admin',
-    email: 'admin@whatsapp.com',
-    password: 'admin123',
+    email: 'akram@gmail.com',
+    password: 'Aazxc',
     name: 'المسؤول',
     avatar: '👤',
     role: 'admin'
